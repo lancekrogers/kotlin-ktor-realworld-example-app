@@ -1,0 +1,11 @@
+.git
+.github
+.gradle
+build
+docs
+*.db
+.idea
+.travis.yml
+Dockerfile
+compose.yaml
+README.md

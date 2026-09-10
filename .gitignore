@@ -36,3 +36,6 @@ build/
 #System Files
 .DS_Store
 Thumbs.db
+
+# Kotlin language server artifact
+kls_database.db
