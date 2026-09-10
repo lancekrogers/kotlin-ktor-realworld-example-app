@@ -9,3 +9,7 @@ docs
 Dockerfile
 compose.yaml
 README.md
+Justfile
+.justfiles
+.env
+.env.example

@@ -39,3 +39,6 @@ Thumbs.db
 
 # Kotlin language server artifact
 kls_database.db
+
+# Local environment (may hold secrets)
+.env
