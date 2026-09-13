@@ -6,13 +6,15 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.realworld.app.domain.User
 import io.realworld.app.domain.UserDTO
+import io.realworld.app.domain.UserResponseDTO
 import io.realworld.app.domain.service.UserService
+import io.realworld.app.domain.toResponse
 
 class UserController(private val userService: UserService) {
     suspend fun login(ctx: ApplicationCall) {
         ctx.receive<UserDTO>().apply {
             userService.authenticate(this.validLogin()).apply {
-                ctx.respond(UserDTO(this))
+                ctx.respond(UserResponseDTO(this.toResponse()))
             }
         }
     }
@@ -20,7 +22,7 @@ class UserController(private val userService: UserService) {
     suspend fun register(ctx: ApplicationCall) {
         ctx.receive<UserDTO>().apply {
             userService.create(this.validRegister()).apply {
-                ctx.respond(UserDTO(this))
+                ctx.respond(UserResponseDTO(this.toResponse()))
             }
         }
     }
@@ -33,7 +35,7 @@ class UserController(private val userService: UserService) {
     }
 
     suspend fun getCurrent(ctx: ApplicationCall) {
-        ctx.respond(UserDTO(ctx.authentication.principal()))
+        ctx.respond(UserResponseDTO(ctx.authentication.principal<User>()?.toResponse()))
     }
 
     suspend fun update(ctx: ApplicationCall) {
@@ -41,7 +43,7 @@ class UserController(private val userService: UserService) {
         require(!email.isNullOrBlank()) { "User not logged." }
         ctx.receive<UserDTO>().also { userDto ->
             userService.update(email, userDto.validToUpdate()).apply {
-                ctx.respond(UserDTO(this))
+                ctx.respond(UserResponseDTO(this?.toResponse()))
             }
         }
     }

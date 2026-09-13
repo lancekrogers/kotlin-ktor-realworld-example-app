@@ -6,11 +6,10 @@ import io.realworld.app.web.rules.AppRule
 import org.apache.http.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Ignore
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
-@Ignore
 class UserControllerTest {
     @Rule
     @JvmField
@@ -52,7 +51,8 @@ class UserControllerTest {
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertEquals(response.body.user?.username, userDTO.user?.username)
-        assertEquals(response.body.user?.password, userDTO.user?.password)
+        assertNotNull(response.body.user?.token)
+        assertNull("register must not echo the password back", response.body.user?.password)
     }
 
 //    @Test
@@ -72,8 +72,8 @@ class UserControllerTest {
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.user?.username)
-        assertNotNull(response.body.user?.password)
         assertNotNull(response.body.user?.token)
+        assertNull("current user must not expose password material", response.body.user?.password)
     }
 
     @Test

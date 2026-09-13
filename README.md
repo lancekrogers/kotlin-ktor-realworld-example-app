@@ -51,6 +51,31 @@ Tests:
         Router definition to features and exceptions
       - App.kt <- The main class
 
+# Development
+
+All tasks run through [`just`](https://github.com/casey/just), in containers. Docker is the
+only prerequisite — no local JDK or Gradle needed.
+
+```
+just                    # list every recipe, grouped by module
+just build compile      # fastest feedback loop
+just test all           # run the suite
+just test census        # what actually ran vs. what is skipped
+just docker up          # start the app on http://localhost:18080
+just docker smoke       # exercise the auth flow and assert responses
+just security audit     # supply-chain, secret, and wrapper checks
+just gate               # everything: both JDKs, tests, security checks
+```
+
+Recipes live in `.justfiles/*.just`, one module per concern (`build`, `test`, `docker`,
+`security`). Run a module bare to see its recipes, e.g. `just security`.
+
+`just gate` is the pre-push check. It builds on JDK 17 and 21, runs the suite, and re-runs the
+checks derived from the security review, so a fixed finding cannot silently regress.
+
+Copy `.env.example` to `.env` to set `JWT_SECRET`; `just` loads it automatically. Without it the
+app generates an ephemeral signing key at startup and warns.
+
 # Getting started
 
 You need just JVM installed.

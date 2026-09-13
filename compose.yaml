@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: .
+      target: runtime
+    ports:
+      - "8080:8080"
+    environment:
+      # Passed through from your shell when set; otherwise the app generates an
+      # ephemeral key and warns. No secret is committed to this file by design.
+      JWT_SECRET: "${JWT_SECRET:-}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/tags || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # Run the test suite in the same toolchain the image builds with:
+  #   docker compose run --rm test
+  test:
+    image: gradle:8.14-jdk17
+    working_dir: /app
+    volumes:
+      - .:/app
+      - gradle-cache:/home/gradle/.gradle
+    command: gradle --no-daemon test
+
+  # Interactive Gradle shell, for anything ad hoc:
+  #   docker compose run --rm build gradle clean build
+  build:
+    image: gradle:8.14-jdk17
+    working_dir: /app
+    volumes:
+      - .:/app
+      - gradle-cache:/home/gradle/.gradle
+    command: gradle --no-daemon clean build
+
+volumes:
+  gradle-cache:
