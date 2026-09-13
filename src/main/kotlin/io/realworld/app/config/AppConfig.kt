@@ -35,6 +35,12 @@ const val SERVER_PORT = 8080
 @KtorExperimentalAPI
 @EngineAPI
 fun setup(isCio: Boolean = true): BaseApplicationEngine {
+    // In-memory H2: the store is ephemeral and dies with the process, so schema creation
+    // via SchemaUtils.create is always against an empty database and no data outlives a
+    // restart. If this URL is ever pointed at a durable store, two things become required
+    // that are deliberately absent today: a schema migration step (SchemaUtils.create does
+    // not ALTER existing tables) and a password-rehash path for any rows written before
+    // bcrypt replaced the previous HMAC scheme.
     DbConfig.setup("jdbc:h2:mem:realworld;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false", "sa", "")
     return server(if (isCio) CIO else Netty)
 }
