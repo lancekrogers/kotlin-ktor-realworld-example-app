@@ -37,6 +37,12 @@ class HttpUtil(port: Int) {
     inline fun <reified T> get(path: String, params: Map<String, Any>? = null) =
         Unirest.get(origin + path).headers(headers).queryString(params).asObject(T::class.java)
 
+    fun getRaw(path: String): HttpResponse<String> =
+        Unirest.get(origin + path).headers(headers).asString()
+
+    fun postRaw(path: String, body: Any): HttpResponse<String> =
+        Unirest.post(origin + path).headers(headers).body(body).asString()
+
     inline fun <reified T> put(path: String, body: Any) =
         Unirest.put(origin + path).headers(headers).body(body).asObject(T::class.java)
 
