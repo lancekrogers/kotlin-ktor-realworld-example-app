@@ -25,4 +25,14 @@ class ArticleService(private val articleRepository: ArticleRepository) {
         val page = articleRepository.search(term, paging.limit, paging.offset, viewerEmail)
         return ArticlesDTO(page.articles, Math.toIntExact(page.total))
     }
+
+    fun favorite(email: String, slug: String): Article {
+        require(slug.isNotBlank()) { "slug is required." }
+        return articleRepository.favorite(email, slug)
+    }
+
+    fun unfavorite(email: String, slug: String): Article {
+        require(slug.isNotBlank()) { "slug is required." }
+        return articleRepository.unfavorite(email, slug)
+    }
 }
