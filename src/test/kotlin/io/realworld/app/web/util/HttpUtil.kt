@@ -73,7 +73,7 @@ class HttpUtil(port: Int) {
 
     fun createArticle(article: Article): HttpResponse<ArticleDTO> {
         createUser()
-        return post<ArticleDTO>("/api/articles", ArticleDTO(article))
+        return post<ArticleDTO>("/articles", ArticleDTO(article))
     }
 
     fun createArticle(): HttpResponse<ArticleDTO> {
