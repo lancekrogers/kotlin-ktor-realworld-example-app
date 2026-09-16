@@ -1,5 +1,6 @@
 package io.realworld.app.web.controllers
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.realworld.app.domain.Article
 import io.realworld.app.domain.ArticleDTO
 import io.realworld.app.domain.Comment
@@ -47,7 +48,10 @@ class CommentCreateTest {
     fun `missing body returns 422`() {
         val token = UUID.randomUUID().toString().take(8)
         val (http, slug) = registerAndCreateArticle(token)
-        val response = http.postRaw(
+        // postRawJson, not postRaw: postRaw's Any parameter binds Unirest's body(Object) overload,
+        // which would JSON-encode this string and send "{\"comment\":{}}" — a type mismatch, not a
+        // payload with an absent body field. Both return 422, so the status cannot tell them apart.
+        val response = http.postRawJson(
             "/articles/$slug/comments",
             """{"comment":{}}"""
         )
@@ -75,6 +79,25 @@ class CommentCreateTest {
         val http = HttpUtil(appRule.port)
         val response = http.postRaw("/articles/$slug/comments", CommentDTO(Comment(body = "Hello $token")))
         assertEquals(HttpStatus.SC_UNAUTHORIZED, response.status)
+    }
+
+    @Test
+    fun `postRawJson sends the object rather than a quoted string`() {
+        val token = UUID.randomUUID().toString().take(8)
+        val (http, slug) = registerAndCreateArticle(token)
+
+        // Guards the helper itself. A valid payload is the only way to observe which Unirest overload
+        // was chosen: sent as a raw object this is accepted, but JSON-encoded into "{\"comment\":...}"
+        // it is a type mismatch and comes back 422. An invalid payload returns 422 either way, which is
+        // exactly how the missing-field test above went unnoticed.
+        val response = http.postRawJson(
+            "/articles/$slug/comments",
+            """{"comment":{"body":"Raw JSON $token"}}"""
+        )
+
+        assertEquals(HttpStatus.SC_OK, response.status)
+        val echoed = jacksonObjectMapper().readTree(response.body).path("comment").path("body").asText()
+        assertEquals("Raw JSON $token", echoed)
     }
 
     @Test

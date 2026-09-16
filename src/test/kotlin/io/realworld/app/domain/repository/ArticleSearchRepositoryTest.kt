@@ -89,13 +89,18 @@ class ArticleSearchRepositoryTest {
     fun `percent sign in search term is literal`() {
         val token = UUID.randomUUID().toString()
         val userId = insertUser("user-$token")
-        val title = "${token}100% pure_x"
-        insertArticle(userId, "slug-$token-percent", title, "body", 1000L)
+        val withPercent = "${token}100% pure_x"
+        // Decoy. The pattern for an escaped term is %...100\%%, which needs a literal '%' and must not
+        // match this. An unescaped term gives %...100%%, where %% collapses to % and matches it too.
+        // Without the decoy both readings return exactly the one row and the test cannot fail.
+        val withoutPercent = "${token}100XX plain"
+        insertArticle(userId, "slug-$token-percent", withPercent, "body", 1000L)
+        insertArticle(userId, "slug-$token-decoy", withoutPercent, "body", 900L)
 
         val page = repo.search("${token}100%", limit = 20, offset = 0, viewerEmail = null)
         assertEquals(1, page.articles.size)
         assertEquals(1L, page.total)
-        assertEquals(title, page.articles.single().title)
+        assertEquals(withPercent, page.articles.single().title)
     }
 
     @Test
