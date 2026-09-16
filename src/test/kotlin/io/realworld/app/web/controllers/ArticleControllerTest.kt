@@ -6,6 +6,7 @@ import io.realworld.app.domain.ArticlesDTO
 import io.realworld.app.domain.ProfileDTO
 import io.realworld.app.web.rules.AppRule
 import io.realworld.app.web.util.HttpUtil
+import io.realworld.app.web.util.assertNoAuthorSecrets
 import org.apache.http.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,6 +15,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import java.util.UUID
 
 class ArticleControllerTest {
     @Rule
@@ -196,15 +198,18 @@ class ArticleControllerTest {
     }
 
     @Test
-    @Ignore("POST /articles/{slug}/favorite is still stubbed; out of scope per D001")
     fun `favorite article by slug`() {
+        val email = "favorite_slug_test@valid_email.com"
+        val password = "Test"
+        appRule.http.registerUser(email, password, "user_name_test_favorite")
+        appRule.http.loginAndSetTokenHeader(email, password)
         val article = Article(
             title = "slug test",
             description = "Ever wonder how?",
             body = "Very carefully.",
             tagList = listOf("favorite")
         )
-        appRule.http.createArticle(article)
+        appRule.http.post<ArticleDTO>("/articles", ArticleDTO(article))
         val slug = "slug-test"
         val response = appRule.http.post<ArticleDTO>("/articles/$slug/favorite")
 
@@ -217,11 +222,10 @@ class ArticleControllerTest {
     }
 
     @Test
-    @Ignore("DELETE /articles/{slug}/favorite is still stubbed; out of scope per D001")
     fun `unfavorite article by slug`() {
         val email = "unfavorite_article@valid_email.com"
         val password = "Test"
-        appRule.http.registerUser(email, password, "user_name_test")
+        appRule.http.registerUser(email, password, "user_name_test_unfavorite")
         appRule.http.loginAndSetTokenHeader(email, password)
         val article = Article(
             title = "slug test 2",
@@ -239,6 +243,60 @@ class ArticleControllerTest {
         assertFalse(response.body.article?.title.isNullOrBlank())
         assertNotNull(response.body.article?.description)
         assertTrue(response.body.article?.tagList?.isNotEmpty() ?: false)
+    }
+
+    @Test
+    fun `favorite response has no author secrets`() {
+        val suffix = UUID.randomUUID()
+        val http = HttpUtil(appRule.port)
+        val email = "fav-secrets-$suffix@valid_email.com"
+        http.registerUser(email, "Test", "fav_secrets_$suffix")
+        http.loginAndSetTokenHeader(email, "Test")
+        val article = Article(
+            title = "Favorite secrets $suffix",
+            description = "desc",
+            body = "body",
+            tagList = listOf("t")
+        )
+        val created = http.post<ArticleDTO>("/articles", ArticleDTO(article))
+        val slug = created.body.article!!.slug!!
+        val response = http.postRaw("/articles/$slug/favorite", "")
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNoAuthorSecrets(response.body)
+    }
+
+    @Test
+    fun `unfavorite response has no author secrets`() {
+        val suffix = UUID.randomUUID()
+        val http = HttpUtil(appRule.port)
+        val email = "unfav-secrets-$suffix@valid_email.com"
+        http.registerUser(email, "Test", "unfav_secrets_$suffix")
+        http.loginAndSetTokenHeader(email, "Test")
+        val article = Article(
+            title = "Unfavorite secrets $suffix",
+            description = "desc",
+            body = "body",
+            tagList = listOf("t")
+        )
+        val created = http.post<ArticleDTO>("/articles", ArticleDTO(article))
+        val slug = created.body.article!!.slug!!
+        http.post<ArticleDTO>("/articles/$slug/favorite")
+        val response = http.deleteRaw("/articles/$slug/favorite")
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertNoAuthorSecrets(response.body)
+    }
+
+    @Test
+    fun `favorite unknown slug returns 404`() {
+        val suffix = UUID.randomUUID()
+        val http = HttpUtil(appRule.port)
+        val email = "fav-404-$suffix@valid_email.com"
+        http.registerUser(email, "Test", "fav_404_$suffix")
+        http.loginAndSetTokenHeader(email, "Test")
+        val unknownSlug = "missing-slug-$suffix"
+        val response = http.postRaw("/articles/$unknownSlug/favorite", "")
+        assertEquals(HttpStatus.SC_NOT_FOUND, response.status)
+        assertTrue(response.body.contains("Article not found."))
     }
 
     @Test

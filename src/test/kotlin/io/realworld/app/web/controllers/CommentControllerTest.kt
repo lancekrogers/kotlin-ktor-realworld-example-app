@@ -1,17 +1,20 @@
 package io.realworld.app.web.controllers
 
+import io.realworld.app.domain.Article
+import io.realworld.app.domain.ArticleDTO
 import io.realworld.app.domain.Comment
 import io.realworld.app.domain.CommentDTO
 import io.realworld.app.domain.CommentsDTO
 import io.realworld.app.web.rules.AppRule
+import io.realworld.app.web.util.HttpUtil
 import org.apache.http.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import java.util.UUID
 
-@Ignore("Comment endpoints are still stubbed; add-comment is enabled in 05_user_activity per D001")
 class CommentControllerTest {
     @Rule
     @JvmField
@@ -19,11 +22,23 @@ class CommentControllerTest {
 
     @Test
     fun `add comment for article by slug`() {
-        val responseArticle = appRule.http.createArticle()
+        val token = UUID.randomUUID().toString().take(8)
+        val http = HttpUtil(appRule.port)
+        val email = "comment-ctrl-$token@valid_email.com"
+        http.registerUser(email, "Test", "comment_ctrl_$token")
+        http.loginAndSetTokenHeader(email, "Test")
+        val article = Article(
+            title = "Comment ctrl $token",
+            description = "desc",
+            body = "body",
+            tagList = listOf("t")
+        )
+        val responseArticle = http.post<ArticleDTO>("/articles", ArticleDTO(article))
+        assertEquals(HttpStatus.SC_OK, responseArticle.status)
 
         val comment = Comment(body = "Very carefully.")
-        val response = appRule.http.post<CommentDTO>(
-            "/api/articles/${responseArticle.body.article?.slug}/comments",
+        val response = http.post<CommentDTO>(
+            "/articles/${responseArticle.body.article?.slug}/comments",
             CommentDTO(comment)
         )
 
@@ -32,6 +47,7 @@ class CommentControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles/{slug}/comments is still stubbed; out of scope per D001")
     fun `get all comments for article by slug`() {
         val responseArticle = appRule.http.createArticle()
 
@@ -39,11 +55,11 @@ class CommentControllerTest {
 
         val comment = Comment(body = "Very carefully.")
         appRule.http.post<CommentDTO>(
-            "/api/articles/$slug/comments",
+            "/articles/$slug/comments",
             CommentDTO(comment)
         )
 
-        val response = appRule.http.get<CommentsDTO>("/api/articles/$slug/comments")
+        val response = appRule.http.get<CommentsDTO>("/articles/$slug/comments")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertTrue(response.body.comments.isNotEmpty())
@@ -51,6 +67,7 @@ class CommentControllerTest {
     }
 
     @Test
+    @Ignore("DELETE /articles/{slug}/comments/{id} is still stubbed; out of scope per D001")
     fun `delete comment for article by slug`() {
         val responseArticle = appRule.http.createArticle()
 
@@ -58,11 +75,11 @@ class CommentControllerTest {
 
         val comment = Comment(body = "Very carefully.")
         val responseAddComment = appRule.http.post<CommentDTO>(
-            "/api/articles/$slug/comments",
+            "/articles/$slug/comments",
             CommentDTO(comment)
         )
 
-        val response = appRule.http.delete("/api/articles/$slug/comments/${responseAddComment.body.comment?.id}")
+        val response = appRule.http.delete("/articles/$slug/comments/${responseAddComment.body.comment?.id}")
 
         assertEquals(response.status, HttpStatus.SC_OK)
     }

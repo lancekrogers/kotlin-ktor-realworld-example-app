@@ -63,19 +63,27 @@ class ArticleController(private val articleService: ArticleService) {
         //            articleService.delete(slug)
     }
 
-    fun favorite(ctx: ApplicationCall): ArticleDTO {
-        ctx.parameters["slug"]
-        //            articleService.favorite(ctx.attribute("email"), slug).apply {
-//                ctx.json(ArticleDTO(this))
-//            }
-        return ArticleDTO(null)
+    suspend fun favorite(ctx: ApplicationCall) {
+        val email = ctx.authentication.principal<User>()?.email
+        require(!email.isNullOrBlank()) { "User not logged." }
+        val slug = requireNotNull(ctx.parameters["slug"]) { "slug is required." }
+        ctx.respond(ArticleDTO(articleService.favorite(email, slug)))
     }
 
-    fun unfavorite(ctx: ApplicationCall): ArticleDTO {
-        ctx.parameters["slug"]
-        //            articleService.unfavorite(ctx.attribute("email"), slug).apply {
-//                ctx.json(ArticleDTO(this))
-//            }
-        return ArticleDTO(null)
+    suspend fun unfavorite(ctx: ApplicationCall) {
+        val email = ctx.authentication.principal<User>()?.email
+        require(!email.isNullOrBlank()) { "User not logged." }
+        val slug = requireNotNull(ctx.parameters["slug"]) { "slug is required." }
+        ctx.respond(ArticleDTO(articleService.unfavorite(email, slug)))
+    }
+
+    suspend fun search(ctx: ApplicationCall) {
+        val viewer = ctx.authentication.principal<User>()?.email
+        ctx.respond(articleService.search(ctx.parameters["q"], ctx.parameters["limit"], ctx.parameters["offset"], viewer))
+    }
+
+    suspend fun popular(ctx: ApplicationCall) {
+        val viewer = ctx.authentication.principal<User>()?.email
+        ctx.respond(articleService.popular(ctx.parameters["limit"], ctx.parameters["offset"], viewer))
     }
 }

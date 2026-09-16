@@ -1,18 +1,22 @@
 package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
+import io.ktor.auth.authentication
 import io.ktor.request.receive
+import io.ktor.response.respond
 import io.realworld.app.domain.CommentDTO
+import io.realworld.app.domain.User
+import io.realworld.app.domain.service.CommentService
 
-class CommentController {
-    //class CommentController(private val commentService: CommentService) {
+class CommentController(private val commentService: CommentService) {
     suspend fun add(ctx: ApplicationCall) {
-        val slug = ctx.parameters["slug"]
-        ctx.receive<CommentDTO>()
-//                commentService.add(slug, ctx.attribute("email")!!, this.comment!!).also {
-//                    ctx.json(CommentDTO(it))
-//                }
-
+        val email = ctx.authentication.principal<User>()?.email
+        require(!email.isNullOrBlank()) { "User not logged." }
+        val slug = requireNotNull(ctx.parameters["slug"]) { "slug is required." }
+        val comment = runCatching { ctx.receive<CommentDTO>().comment }
+            .getOrElse { throw IllegalArgumentException("Comment is invalid.") }
+        requireNotNull(comment) { "Comment is invalid." }
+        ctx.respond(CommentDTO(commentService.add(slug, email, comment)))
     }
 
     fun findBySlug(ctx: ApplicationCall) {

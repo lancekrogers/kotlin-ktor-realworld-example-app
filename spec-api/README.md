@@ -5,10 +5,21 @@
 To locally run the provided Postman collection against your backend, execute:
 
 ```
-APIURL=http://localhost:3000/api ./run-api-tests.sh
+APIURL=http://localhost:8080 ./run-api-tests.sh
 ```
 
+`APIURL` is required; the runner will not start without it.
+
 For more details, see [`run-api-tests.sh`](run-api-tests.sh).
+
+## Expected-failures gate blind spot
+
+The requests `Articles, Favorite, Comments / Delete Comment for Article` and
+`Articles, Favorite, Comments / Delete Article` carry zero assertions in the
+Postman collection, so `compare_results.py` can never mark them failed even
+though those endpoints are stubbed and answer 404. No code change can detect
+them until the collection gains assertions; they are deliberately absent from
+`expected-failures.txt`.
 
 ## Considerations for your backend with [CORS](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
 

@@ -42,3 +42,7 @@ kls_database.db
 
 # Local environment (may hold secrets)
 .env
+
+# Newman JSON report from spec-api runs
+newman-report.json
+spec-api/newman-report.json

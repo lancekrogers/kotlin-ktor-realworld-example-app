@@ -123,3 +123,16 @@ verify:
     just docker up
     trap 'just docker down' EXIT
     just docker smoke
+
+# Run the RealWorld Postman collection against the running app container
+[no-cd]
+spec:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! docker inspect {{container_name}} >/dev/null 2>&1; then
+        echo "start the app first: just docker up" >&2; exit 1
+    fi
+    docker run --rm --network container:{{container_name}} \
+        -v {{root}}/spec-api:/spec -w /spec \
+        -e APIURL=http://localhost:8080 -e REPORT=/spec/newman-report.json \
+        node:22-bookworm-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5 ./run-api-tests.sh

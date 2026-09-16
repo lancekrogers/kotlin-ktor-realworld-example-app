@@ -43,3 +43,34 @@ jobs:
         with:
           name: test-reports-jdk${{ matrix.java }}
           path: build/reports/tests
+
+  spec:
+    name: RealWorld spec tests
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      - name: Build image
+        run: docker build -t ktor-realworld:ci .
+      - name: Start app
+        run: |
+          docker run -d --name app -p 8080:8080 -e JWT_SECRET="$(openssl rand -hex 32)" ktor-realworld:ci
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/tags >/dev/null; then echo "app ready"; exit 0; fi
+            sleep 1
+          done
+          docker logs app
+          exit 1
+      - name: Run collection
+        run: APIURL=http://localhost:8080 REPORT=newman-report.json ./spec-api/run-api-tests.sh || true
+      - name: Compare against expected failures
+        run: python3 spec-api/compare_results.py newman-report.json spec-api/expected-failures.txt
+      - name: Upload newman report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: newman-report
+          path: newman-report.json
