@@ -55,4 +55,12 @@ class PagingTest {
         }
         assertEquals("limit must be an integer.", ex.message)
     }
+
+    @Test
+    fun parse_rejectsNonIntegerOffset() {
+        val ex = assertThrows(IllegalArgumentException::class.java) {
+            Paging.parse(null, "abc")
+        }
+        assertEquals("offset must be an integer.", ex.message)
+    }
 }

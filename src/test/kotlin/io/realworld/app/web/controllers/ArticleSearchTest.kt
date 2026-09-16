@@ -63,8 +63,9 @@ class ArticleSearchTest {
         createWith(token, "Plain title", "body contains $token marker")
         val response = search(token)
         assertEquals(HttpStatus.SC_OK, response.status)
-        assertTrue(response.body.articlesCount >= 1)
-        assertTrue(response.body.articles.any { it.body.contains(token) })
+        assertEquals(1, response.body.articlesCount)
+        assertEquals(1, response.body.articles.size)
+        assertTrue(response.body.articles.all { it.body.contains(token) })
     }
 
     @Test
@@ -73,8 +74,9 @@ class ArticleSearchTest {
         createWith(token, "Title $token", "body")
         val response = search(token.lowercase())
         assertEquals(HttpStatus.SC_OK, response.status)
-        assertTrue(response.body.articlesCount >= 1)
-        assertTrue(response.body.articles.any { it.title!!.contains(token, ignoreCase = true) })
+        assertEquals(1, response.body.articlesCount)
+        assertEquals(1, response.body.articles.size)
+        assertTrue(response.body.articles.all { it.title!!.contains(token, ignoreCase = true) })
     }
 
     @Test
@@ -89,7 +91,6 @@ class ArticleSearchTest {
 
     @Test
     fun `blank q`() {
-        UUID.randomUUID().toString().take(8) // isolation suffix per D009
         val encoded = URLEncoder.encode("   ", "UTF-8")
         val response = appRule.http.getRaw("/articles/search?q=$encoded")
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, response.status)
@@ -97,7 +98,6 @@ class ArticleSearchTest {
 
     @Test
     fun `missing q`() {
-        UUID.randomUUID().toString().take(8) // isolation suffix per D009
         val response = appRule.http.getRaw("/articles/search")
         assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, response.status)
     }
@@ -116,6 +116,7 @@ class ArticleSearchTest {
         createArticle(secondTitle, "body")
         val underscoreResponse = search("${token}100_")
         assertEquals(HttpStatus.SC_OK, underscoreResponse.status)
+        assertEquals(0, underscoreResponse.body.articlesCount)
         assertTrue(underscoreResponse.body.articles.none { it.title == secondTitle })
     }
 
@@ -136,14 +137,16 @@ class ArticleSearchTest {
     fun `bad paging`() {
         val token = UUID.randomUUID().toString().take(8)
         val cases = listOf(
-            "limit=0",
-            "limit=101",
-            "limit=abc",
-            "offset=-1"
+            "limit=0" to "limit must be between 1 and 100.",
+            "limit=101" to "limit must be between 1 and 100.",
+            "limit=abc" to "limit must be an integer.",
+            "offset=-1" to "offset must not be negative.",
+            "offset=abc" to "offset must be an integer."
         )
-        cases.forEach { params ->
+        cases.forEach { (params, expectedMessage) ->
             val response = appRule.http.getRaw("/articles/search?q=$token&$params")
             assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, response.status)
+            assertTrue(response.body.contains(expectedMessage))
         }
     }
 
@@ -154,6 +157,7 @@ class ArticleSearchTest {
         val anonymous = HttpUtil(appRule.port)
         val response = anonymous.get<ArticlesDTO>("/articles/search", mapOf("q" to token))
         assertEquals(HttpStatus.SC_OK, response.status)
+        assertEquals(1, response.body.articlesCount)
         assertNotNull(response.body.articles)
     }
 
