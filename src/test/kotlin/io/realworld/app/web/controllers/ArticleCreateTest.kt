@@ -68,6 +68,23 @@ class ArticleCreateTest {
     }
 
     @Test
+    fun `blank description returns 422`() {
+        val suffix = UUID.randomUUID()
+        val http = HttpUtil(appRule.port)
+        val email = "blank-desc-$suffix@valid_email.com"
+        http.registerUser(email, "Test", "blank_desc_$suffix")
+        http.loginAndSetTokenHeader(email, "Test")
+        val article = Article(
+            title = "Title $suffix",
+            description = "  ",
+            body = "body",
+            tagList = listOf("t")
+        )
+        val response = http.postRaw("/articles", ArticleDTO(article))
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, response.status)
+    }
+
+    @Test
     fun `create without token returns 401`() {
         val suffix = UUID.randomUUID()
         val http = HttpUtil(appRule.port)

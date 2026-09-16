@@ -11,7 +11,7 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
-@Ignore
+@Ignore("Comment endpoints are still stubbed; add-comment is enabled in 05_user_activity per D001")
 class CommentControllerTest {
     @Rule
     @JvmField
