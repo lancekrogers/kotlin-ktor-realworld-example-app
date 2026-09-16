@@ -1,8 +1,11 @@
 package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
+import io.ktor.response.respond
+import io.realworld.app.domain.ProfileStatsDTO
+import io.realworld.app.domain.service.ProfileStatsService
 
-class ProfileController {
+class ProfileController(private val profileStatsService: ProfileStatsService) {
     //class ProfileController(private val userService: UserService) {
     fun get(ctx: ApplicationCall) {
         ctx.parameters["username"]
@@ -20,5 +23,10 @@ class ProfileController {
         ctx.parameters["username"]
 //            userService.unfollow(ctx.attribute("email")!!, usernameToUnfollow).also { profile ->
 //                ctx.json(ProfileDTO(profile))
+    }
+
+    suspend fun stats(ctx: ApplicationCall) {
+        val username = requireNotNull(ctx.parameters["username"]) { "username is required." }
+        ctx.respond(ProfileStatsDTO(profileStatsService.stats(username)))
     }
 }

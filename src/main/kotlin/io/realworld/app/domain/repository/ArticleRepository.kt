@@ -108,6 +108,10 @@ class ArticleRepository {
         ArticlePage(toArticles(rows, viewerEmail), total)
     }
 
+    fun countByAuthor(userId: Long): Long = transaction { Articles.select { Articles.author eq userId }.count() }
+
+    fun countFavoritesBy(userId: Long): Long = transaction { ArticleFavorites.select { ArticleFavorites.user eq userId }.count() }
+
     fun popular(limit: Int, offset: Long, viewerEmail: String?): ArticlePage = transaction {
         val favCount = ArticleFavorites.user.count()
         val rankedIds = Articles.leftJoin(ArticleFavorites)

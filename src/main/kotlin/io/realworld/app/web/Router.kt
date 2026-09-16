@@ -30,6 +30,7 @@ fun Routing.profiles(profileController: ProfileController) {
     route("profiles/{username}") {
         authenticate(optional = true) {
             get { profileController.get(this.context) }
+            get("stats") { profileController.stats(this.context) }
         }
         authenticate {
             route("follow") {
