@@ -40,7 +40,9 @@ Draft for my review. Built from recorded festival evidence (C8), not from memory
 
 **Planning verification:** approval judge caught a stale "one shipped feature" goal and a false "no numeric score" claim from truncated `fest validate` output.
 
-**Still unverified:** spec-job **red-path proof on GitHub Actions** (break manifest → job red → restore → green) — blocked because slices stacked behind unmerged PR #4. `gh pr merge` was denied twice by the harness permission classifier, so PRs stacked rather than merging in order.
+**Spec-job red path, proven on CI:** with the real manifest the job is green ([run 35127041807](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/actions/runs/35127041807)); with one entry removed it is red ([run 35127046886](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/actions/runs/35127046886)), failing at the comparator with `Articles / All Articles` under UNEXPECTED FAILURES and `18 failed, 17 expected`. Both JDK build jobs stayed green across the pair, so the failure discriminates rather than merely breaking the run.
+
+**Still unmerged:** `gh pr merge` was denied three times by the harness permission classifier (`Merge Without Review` ×2, `Self-Approval` ×1) on PRs GitHub reports as `APPROVED`, so the slices stacked rather than merging in order. Each is open, green and approved by a second account: [#5](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/5), [#6](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/6), [#7](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/7), [#8](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/8), [#9](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/9). Because they are stacked on feature branches rather than `master`, `pull_request: branches: [master]` triggers no checks on them; the green runs above were dispatched per branch instead.
 
 ## What agents got wrong
 
@@ -66,6 +68,11 @@ The brief says "Choose one"; I shipped **all three** as ordered slices so the fo
 **Still stubbed:** article list/filter/feed/get/update/delete, comment list/delete, profile get/follow/unfollow — each skipped test cites why in its `@Ignore` reason.
 
 **Deferred bug (R8):** `unfollow` deletes the wrong `Follows` row orientation; no named feature wires follow/unfollow, so it stays unreachable and unfixed.
+
+**Deferred test fixes.** PR review found two tests that pass without proving what they claim. Neither affects production behaviour — I verified both underlying paths directly — and fixing them would rewrite three published branches and stale two approvals, so they are tracked rather than patched mid-stack.
+
+1. **`postRaw` double-encodes raw JSON** (`HttpUtil.kt:43`). Its parameter is declared `Any`, so Kotlin statically binds Unirest's `body(Object)` overload, which runs the argument through `writeValueAsString` — JSON-encoding a String *as a string*. `CommentCreateTest.missing body returns 422` therefore sends `"{\"comment\":{}}"`, not `{"comment":{}}`, and passes on a type-mismatch rather than a missing field. Against a container both payloads return an identical `422 {"errors":{"body":["Comment is invalid."]}}`, so the feature is correct and no assertion could have caught this. Fix is a `String`-typed helper; worth doing because the trap applies to any future raw-JSON test.
+2. **The `%` literal-wildcard test cannot fail** (`ArticleSearchRepositoryTest`). Term `…100%` against title `…100% pure_x` matches whether or not `%` is escaped, since `%%` collapses to `%`. The escaping is genuinely proven by the sibling underscore test, which asserts 0 matches through the identical `LikePattern` path and would fail if escaping broke.
 
 ## Walkthrough
 
