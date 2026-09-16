@@ -8,14 +8,19 @@ import java.util.Date
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.LikePattern
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.lowerCase
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -34,6 +39,8 @@ internal object ArticleTags : Table() {
     val tag: Column<EntityID<Long>> = reference("tag", Tags)
     override val primaryKey = PrimaryKey(article, tag)
 }
+
+data class ArticlePage(val articles: List<Article>, val total: Long)
 
 class ArticleRepository {
     init {
@@ -65,6 +72,17 @@ class ArticleRepository {
     }
 
     fun findBySlug(slug: String, viewerEmail: String?): Article? = transaction { loadBySlug(slug, viewerEmail) }
+
+    fun search(term: String, limit: Int, offset: Long, viewerEmail: String?): ArticlePage = transaction {
+        val pattern = LikePattern("%", '\\') + LikePattern.ofLiteral(term.lowercase()) + "%"
+        val matches = (Articles.title.lowerCase() like pattern) or (Articles.body.lowerCase() like pattern)
+        val total = Articles.select { matches }.count()
+        val rows = (Articles innerJoin Users).select { matches }
+            .orderBy(Articles.createdAt to SortOrder.DESC, Articles.id to SortOrder.DESC)
+            .limit(limit, offset)
+            .toList()
+        ArticlePage(toArticles(rows, viewerEmail), total)
+    }
 
     /** Call inside a transaction. */
     internal fun loadBySlug(slug: String, viewerEmail: String?): Article? =
