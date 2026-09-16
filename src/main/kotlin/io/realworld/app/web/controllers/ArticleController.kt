@@ -78,4 +78,9 @@ class ArticleController(private val articleService: ArticleService) {
 //            }
         return ArticleDTO(null)
     }
+
+    suspend fun search(ctx: ApplicationCall) {
+        val viewer = ctx.authentication.principal<User>()?.email
+        ctx.respond(articleService.search(ctx.parameters["q"], ctx.parameters["limit"], ctx.parameters["offset"], viewer))
+    }
 }

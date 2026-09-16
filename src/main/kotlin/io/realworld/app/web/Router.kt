@@ -42,6 +42,12 @@ fun Routing.profiles(profileController: ProfileController) {
 
 fun Routing.articles(articleController: ArticleController, commentController: CommentController) {
     route("articles") {
+        // Public reads first. Ktor resolves equal-quality sibling routes in registration order, and
+        // the authenticate block below contains {slug}, which would otherwise match "search" and
+        // demand a token. Keep this block above it.
+        authenticate(optional = true) {
+            get("search") { articleController.search(this.context) }
+        }
         authenticate {
             get("feed") { articleController.feed(this.context) }
             route("{slug}") {
