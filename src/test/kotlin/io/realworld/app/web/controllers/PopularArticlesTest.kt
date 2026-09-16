@@ -157,6 +157,13 @@ class PopularArticlesTest {
     }
 
     @Test
+    fun `bad offset`() {
+        val response = appRule.http.getRaw("/articles/feed/popular?offset=-1")
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, response.status)
+        assertTrue(response.body.contains("offset must not be negative."))
+    }
+
+    @Test
     fun `anonymous is public`() {
         val anonymous = HttpUtil(appRule.port)
         val response = anonymous.get<ArticlesDTO>("/articles/feed/popular")

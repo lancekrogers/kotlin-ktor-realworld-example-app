@@ -43,6 +43,9 @@ class HttpUtil(port: Int) {
     fun postRaw(path: String, body: Any): HttpResponse<String> =
         Unirest.post(origin + path).headers(headers).body(body).asString()
 
+    fun deleteRaw(path: String): HttpResponse<String> =
+        Unirest.delete(origin + path).headers(headers).asString()
+
     inline fun <reified T> put(path: String, body: Any) =
         Unirest.put(origin + path).headers(headers).body(body).asObject(T::class.java)
 

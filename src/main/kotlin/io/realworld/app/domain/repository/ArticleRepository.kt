@@ -151,10 +151,13 @@ class ArticleRepository {
         val favoritedByViewer = if (viewerId == null) emptySet() else
             ArticleFavorites.select { (ArticleFavorites.user eq viewerId) and (ArticleFavorites.article inList ids) }
                 .map { it[ArticleFavorites.article] }.toSet()
+        val authorIds = rows.map { it[Articles.author].value }
+        val followedAuthorIds = if (viewerId == null) emptySet() else
+            Follows.select { (Follows.user inList authorIds) and (Follows.follower eq viewerId.value) }
+                .map { it[Follows.user] }.toSet()
         return rows.map { row ->
             val authorId = row[Articles.author].value
-            val following = viewerId != null &&
-                !Follows.select { (Follows.user eq authorId) and (Follows.follower eq viewerId.value) }.empty()
+            val following = authorId in followedAuthorIds
             Article(
                 slug = row[Articles.slug],
                 title = row[Articles.title],
