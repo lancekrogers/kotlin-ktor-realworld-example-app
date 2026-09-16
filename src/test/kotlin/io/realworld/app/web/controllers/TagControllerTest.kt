@@ -7,11 +7,10 @@ import io.realworld.app.web.rules.AppRule
 import org.apache.http.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import java.util.UUID
 
-@Ignore
 class TagControllerTest {
     @Rule
     @JvmField
@@ -19,22 +18,25 @@ class TagControllerTest {
 
     @Test
     fun `get all tags`() {
+        val suffix = UUID.randomUUID()
         val article = Article(
-            title = "How to train your dragon",
+            title = "How to train your dragon $suffix",
             description = "Ever wonder how?",
             body = "Very carefully.",
             tagList = listOf("dragons", "training")
         )
-        val email = "create_article@valid_email.com"
+        val email = "tags-$suffix@valid_email.com"
         val password = "Test"
-        appRule.http.registerUser(email, password, "user_name_test")
+        appRule.http.registerUser(email, password, "tags_user_$suffix")
         appRule.http.loginAndSetTokenHeader(email, password)
 
-        appRule.http.post<ArticleDTO>("/api/articles", ArticleDTO(article))
+        val createResponse = appRule.http.post<ArticleDTO>("/articles", ArticleDTO(article))
+        assertEquals(HttpStatus.SC_OK, createResponse.status)
 
-        val response = appRule.http.get<TagDTO>("/api/tags")
+        val response = appRule.http.get<TagDTO>("/tags")
 
-        assertEquals(response.status, HttpStatus.SC_OK)
-        assertTrue(response.body.tags.isNotEmpty())
+        assertEquals(HttpStatus.SC_OK, response.status)
+        assertTrue(response.body.tags.contains("dragons"))
+        assertTrue(response.body.tags.contains("training"))
     }
 }

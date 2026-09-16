@@ -10,7 +10,7 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
-@Ignore
+@Ignore("Profile get, follow and unfollow are still stubbed; no slice in this festival enables them per D001")
 class ProfileControllerTest {
     @Rule
     @JvmField

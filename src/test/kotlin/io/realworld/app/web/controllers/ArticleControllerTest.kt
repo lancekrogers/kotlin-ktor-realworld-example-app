@@ -15,17 +15,17 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
-@Ignore
 class ArticleControllerTest {
     @Rule
     @JvmField
     val appRule = AppRule()
 
     @Test
+    @Ignore("GET /articles is still stubbed; out of scope per D001")
     fun `get all articles`() {
         appRule.http.createArticle()
         val http = HttpUtil(appRule.port)
-        val response = http.get<ArticlesDTO>("/api/articles")
+        val response = http.get<ArticlesDTO>("/articles")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)
@@ -33,9 +33,10 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles is still stubbed; out of scope per D001")
     fun `get all articles with auth`() {
         appRule.http.createArticle()
-        val response = appRule.http.get<ArticlesDTO>("/api/articles")
+        val response = appRule.http.get<ArticlesDTO>("/articles")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)
@@ -46,9 +47,10 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles is still stubbed; out of scope per D001")
     fun `get all articles by author`() {
         val author = "user_name_test"
-        val response = appRule.http.get<ArticlesDTO>("/api/articles?author=$author")
+        val response = appRule.http.get<ArticlesDTO>("/articles?author=$author")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)
@@ -61,10 +63,11 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles is still stubbed; out of scope per D001")
     fun `get all articles by author with auth`() {
         appRule.http.createArticle()
         val author = "user_name_test"
-        val response = appRule.http.get<ArticlesDTO>("/api/articles?author=$author")
+        val response = appRule.http.get<ArticlesDTO>("/articles?author=$author")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)
@@ -77,11 +80,12 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles is still stubbed; out of scope per D001")
     fun `get all articles favorited by username`() {
         val responseCreate = appRule.http.createArticle()
-        appRule.http.post<ArticleDTO>("/api/articles/${responseCreate.body.article?.slug}/favorite")
+        appRule.http.post<ArticleDTO>("/articles/${responseCreate.body.article?.slug}/favorite")
 
-        val response = appRule.http.get<ArticlesDTO>("/api/articles?favorited=user_name_test")
+        val response = appRule.http.get<ArticlesDTO>("/articles?favorited=user_name_test")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)
@@ -94,11 +98,12 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles is still stubbed; out of scope per D001")
     fun `get all articles favorited by username with auth`() {
         val responseCreate = appRule.http.createArticle()
-        appRule.http.post<ArticleDTO>("/api/articles/${responseCreate.body.article?.slug}/favorite")
+        appRule.http.post<ArticleDTO>("/articles/${responseCreate.body.article?.slug}/favorite")
 
-        val response = appRule.http.get<ArticlesDTO>("/api/articles?favorited=${responseCreate.body.article?.author?.username}")
+        val response = appRule.http.get<ArticlesDTO>("/articles?favorited=${responseCreate.body.article?.author?.username}")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)
@@ -109,10 +114,11 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles is still stubbed; out of scope per D001")
     fun `get all articles by tag`() {
         val responseCreate = appRule.http.createArticle()
         val tag = responseCreate.body.article?.tagList?.first()
-        val response = appRule.http.get<ArticlesDTO>("/api/articles?tag=${responseCreate.body.article?.tagList?.first()}")
+        val response = appRule.http.get<ArticlesDTO>("/articles?tag=${responseCreate.body.article?.tagList?.first()}")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)
@@ -138,15 +144,16 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles/feed is still stubbed; out of scope per D001")
     fun `get all articles of feed`() {
         appRule.http.createArticle()
 
         val http = HttpUtil(appRule.port)
         http.createUser("celeb_follow_profile@valid_email.com", "celeb_username")
 
-        http.post<ProfileDTO>("/api/profiles/user_name_test/follow")
+        http.post<ProfileDTO>("/profiles/user_name_test/follow")
 
-        val response = appRule.http.get<ArticlesDTO>("/api/articles/feed")
+        val response = appRule.http.get<ArticlesDTO>("/articles/feed")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.articles)
@@ -157,10 +164,11 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("GET /articles/{slug} is still stubbed; out of scope per D001")
     fun `get single article by slug`() {
         val responseArticle = appRule.http.createArticle()
         val slug = responseArticle.body.article?.slug
-        val response = appRule.http.get<ArticleDTO>("/api/articles/$slug")
+        val response = appRule.http.get<ArticleDTO>("/articles/$slug")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.article)
@@ -171,11 +179,12 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("PUT /articles/{slug} is still stubbed; out of scope per D001")
     fun `update article by slug`() {
         val responseCreated = appRule.http.createArticle()
         val slug = responseCreated.body.article?.slug
         val article = Article(body = "Very carefully.", title = "Teste", description = "Teste Desc")
-        val response = appRule.http.put<ArticleDTO>("/api/articles/$slug", ArticleDTO(article))
+        val response = appRule.http.put<ArticleDTO>("/articles/$slug", ArticleDTO(article))
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.article)
@@ -187,6 +196,7 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("POST /articles/{slug}/favorite is still stubbed; out of scope per D001")
     fun `favorite article by slug`() {
         val article = Article(
             title = "slug test",
@@ -196,7 +206,7 @@ class ArticleControllerTest {
         )
         appRule.http.createArticle(article)
         val slug = "slug-test"
-        val response = appRule.http.post<ArticleDTO>("/api/articles/$slug/favorite")
+        val response = appRule.http.post<ArticleDTO>("/articles/$slug/favorite")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.article)
@@ -207,6 +217,7 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("DELETE /articles/{slug}/favorite is still stubbed; out of scope per D001")
     fun `unfavorite article by slug`() {
         val email = "unfavorite_article@valid_email.com"
         val password = "Test"
@@ -218,9 +229,9 @@ class ArticleControllerTest {
             body = "Very carefully.",
             tagList = listOf("unfavorite")
         )
-        appRule.http.post<ArticleDTO>("/api/articles", ArticleDTO(article))
+        appRule.http.post<ArticleDTO>("/articles", ArticleDTO(article))
         val slug = "slug-test-2"
-        val response = appRule.http.deleteWithResponseBody<ArticleDTO>("/api/articles/$slug/favorite")
+        val response = appRule.http.deleteWithResponseBody<ArticleDTO>("/articles/$slug/favorite")
 
         assertEquals(response.status, HttpStatus.SC_OK)
         assertNotNull(response.body.article)
@@ -231,9 +242,10 @@ class ArticleControllerTest {
     }
 
     @Test
+    @Ignore("DELETE /articles/{slug} is still stubbed; out of scope per D001")
     fun `delete article by slug`() {
         val responseCreate = appRule.http.createArticle()
-        val response = appRule.http.delete("/api/articles/${responseCreate.body.article?.slug}")
+        val response = appRule.http.delete("/articles/${responseCreate.body.article?.slug}")
 
         assertEquals(response.status, HttpStatus.SC_OK)
     }

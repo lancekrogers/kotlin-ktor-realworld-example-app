@@ -9,4 +9,4 @@ data class Comment(val id: Long? = null,
                    val createdAt: Date? = null,
                    val updatedAt: Date? = null,
                    val body: String,
-                   val author: User? = null)
+                   val author: Profile? = null)

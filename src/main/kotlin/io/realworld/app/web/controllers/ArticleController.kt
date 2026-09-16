@@ -1,12 +1,15 @@
 package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
+import io.ktor.auth.authentication
 import io.ktor.request.receive
+import io.ktor.response.respond
 import io.realworld.app.domain.ArticleDTO
 import io.realworld.app.domain.ArticlesDTO
+import io.realworld.app.domain.User
+import io.realworld.app.domain.service.ArticleService
 
-class ArticleController {
-//class ArticleController(private val articleService: ArticleService) {
+class ArticleController(private val articleService: ArticleService) {
 
     fun findBy(ctx: ApplicationCall): ArticlesDTO {
         val tag = ctx.parameters["tag"]
@@ -37,12 +40,13 @@ class ArticleController {
         return ArticleDTO(null)
     }
 
-    suspend fun create(ctx: ApplicationCall): ArticleDTO {
-        ctx.receive<ArticleDTO>()
-        //            articleService.create(ctx.attribute("email"), article).apply {
-//                ctx.json(ArticleDTO(this))
-//            }
-        return ArticleDTO(null)
+    suspend fun create(ctx: ApplicationCall) {
+        val email = ctx.authentication.principal<User>()?.email
+        require(!email.isNullOrBlank()) { "User not logged." }
+        val article = runCatching { ctx.receive<ArticleDTO>().article }
+            .getOrElse { throw IllegalArgumentException("Article is invalid.") }
+        requireNotNull(article) { "Article is invalid." }
+        ctx.respond(ArticleDTO(articleService.create(email, article)))
     }
 
     suspend fun update(ctx: ApplicationCall): ArticleDTO {
