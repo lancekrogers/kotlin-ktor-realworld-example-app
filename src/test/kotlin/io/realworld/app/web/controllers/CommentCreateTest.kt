@@ -44,6 +44,17 @@ class CommentCreateTest {
     }
 
     @Test
+    fun `missing body returns 422`() {
+        val token = UUID.randomUUID().toString().take(8)
+        val (http, slug) = registerAndCreateArticle(token)
+        val response = http.postRaw(
+            "/articles/$slug/comments",
+            """{"comment":{}}"""
+        )
+        assertEquals(HttpStatus.SC_UNPROCESSABLE_ENTITY, response.status)
+    }
+
+    @Test
     fun `unknown slug returns 404`() {
         val token = UUID.randomUUID().toString().take(8)
         val http = HttpUtil(appRule.port)
