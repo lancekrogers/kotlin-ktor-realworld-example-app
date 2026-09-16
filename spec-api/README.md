@@ -5,8 +5,10 @@
 To locally run the provided Postman collection against your backend, execute:
 
 ```
-APIURL=http://localhost:3000/api ./run-api-tests.sh
+APIURL=http://localhost:8080 ./run-api-tests.sh
 ```
+
+`APIURL` is required; the runner will not start without it.
 
 For more details, see [`run-api-tests.sh`](run-api-tests.sh).
 
