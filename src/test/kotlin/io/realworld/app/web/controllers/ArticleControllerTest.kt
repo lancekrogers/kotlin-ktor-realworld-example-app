@@ -196,15 +196,18 @@ class ArticleControllerTest {
     }
 
     @Test
-    @Ignore("POST /articles/{slug}/favorite is still stubbed; out of scope per D001")
     fun `favorite article by slug`() {
+        val email = "favorite_slug_test@valid_email.com"
+        val password = "Test"
+        appRule.http.registerUser(email, password, "user_name_test_favorite")
+        appRule.http.loginAndSetTokenHeader(email, password)
         val article = Article(
             title = "slug test",
             description = "Ever wonder how?",
             body = "Very carefully.",
             tagList = listOf("favorite")
         )
-        appRule.http.createArticle(article)
+        appRule.http.post<ArticleDTO>("/articles", ArticleDTO(article))
         val slug = "slug-test"
         val response = appRule.http.post<ArticleDTO>("/articles/$slug/favorite")
 
@@ -217,11 +220,10 @@ class ArticleControllerTest {
     }
 
     @Test
-    @Ignore("DELETE /articles/{slug}/favorite is still stubbed; out of scope per D001")
     fun `unfavorite article by slug`() {
         val email = "unfavorite_article@valid_email.com"
         val password = "Test"
-        appRule.http.registerUser(email, password, "user_name_test")
+        appRule.http.registerUser(email, password, "user_name_test_unfavorite")
         appRule.http.loginAndSetTokenHeader(email, password)
         val article = Article(
             title = "slug test 2",
