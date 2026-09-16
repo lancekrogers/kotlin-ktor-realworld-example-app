@@ -44,4 +44,5 @@ kls_database.db
 .env
 
 # Newman JSON report from spec-api runs
+newman-report.json
 spec-api/newman-report.json

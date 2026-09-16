@@ -3,6 +3,13 @@
 
 Exit 0 only when the failing requests are exactly the ones listed. An unexpected
 failure is a regression; an unexpected pass means the manifest is stale.
+
+Structural blind spot: the requests ``Articles, Favorite, Comments / Delete Comment
+for Article`` and ``Articles, Favorite, Comments / Delete Article`` carry zero
+assertions in the Postman collection, so this comparator can never mark them
+failed even though those endpoints are stubbed and answer 404. No code change can
+detect them until the collection gains assertions; they are deliberately absent
+from the manifest.
 """
 import json
 import sys
@@ -49,7 +56,16 @@ def manifest(path):
 def main(report_path, manifest_path, collection_path):
     collection = json.loads(Path(collection_path).read_text())
     ordered_names = ordered_request_names(collection)
-    failed = failed_requests(json.loads(Path(report_path).read_text()), ordered_names)
+    report = json.loads(Path(report_path).read_text())
+    executions = report["run"]["executions"]
+    if len(ordered_names) != len(executions):
+        print(
+            f"ERROR: Collection has {len(ordered_names)} requests but report has "
+            f"{len(executions)} executions. The report does not correspond to the "
+            "collection."
+        )
+        return 2
+    failed = failed_requests(report, ordered_names)
     expected = manifest(manifest_path)
     sections = (
         ("UNEXPECTED FAILURES (regressions)", sorted(failed - expected)),
