@@ -30,11 +30,12 @@ Draft for my review. Built from recorded festival evidence (C8), not from memory
 | Slice | PR / CI | Census (`just test census`) | Other proof |
 |---|---|---|---|
 | 1 CI | [PR #3](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/3) merged; red probe [run 35022352856](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/actions/runs/35022352856) | 4 ran, 0 failed, 19 skipped | JDK 17/21 no-cache runs; SHA-pinned actions |
-| 2 Foundation | [PR #4](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/4) green, merge blocked | 31 → 32 ran, 19 skipped | raw-JSON author leak tests; persistence probe |
-| 3 Search | stacked on #4 | 60 ran, 19 skipped | LOWER-on-CLOB probe; anonymous 200 route-order test |
-| 4 Popular | stacked on #4 | 78 ran, 17 skipped | H2 GROUP BY ranking in `PopularArticlesTest` |
-| 5 User activity | stacked on #4 | 93 → 94 ran, 16 skipped | D006 given-vs-received: V=1/W=0 in `ProfileStatsTest` |
-| 6 Spec CI | stacked five deep; PR not opened | 94 ran, 16 skipped | Newman: 31 requests, 0 transport failures, 112 assertions / 16 failing; 18 requests in [`spec-api/expected-failures.txt`](spec-api/expected-failures.txt) |
+| 2 Foundation | [PR #4](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/4) merged | 31 → 32 ran, 19 skipped | raw-JSON author leak tests; persistence probe |
+| 3 Search | [PR #5](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/5) merged | 60 ran, 19 skipped | LOWER-on-CLOB probe; anonymous 200 route-order test |
+| 4 Popular | [PR #6](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/6) merged | 78 ran, 17 skipped | H2 GROUP BY ranking in `PopularArticlesTest` |
+| 5 User activity | [PR #7](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/7) merged | 93 → 94 ran, 16 skipped | D006 given-vs-received: V=1/W=0 in `ProfileStatsTest` |
+| 6 Spec CI | [PR #8](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/8) merged | 94 ran, 16 skipped | Newman: 31 requests, 0 transport failures, 112 assertions / 16 failing; 18 requests in [`spec-api/expected-failures.txt`](spec-api/expected-failures.txt) |
+| 7 Docs | [PR #9](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/9) merged | — | README examples captured from a running container |
 
 **End state:** 94 running tests, 0 failing, 16 skipped (each `@Ignore` names the stubbed endpoint). Suite grew from **4 running** at CI baseline. Five of the author's originally disabled tests now run: `create article`, `get all tags`, `favorite article by slug`, `unfavorite article by slug`, `add comment for article by slug`.
 
@@ -42,7 +43,9 @@ Draft for my review. Built from recorded festival evidence (C8), not from memory
 
 **Spec-job red path, proven on CI:** with the real manifest the job is green ([run 35127041807](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/actions/runs/35127041807)); with one entry removed it is red ([run 35127046886](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/actions/runs/35127046886)), failing at the comparator with `Articles / All Articles` under UNEXPECTED FAILURES and `18 failed, 17 expected`. Both JDK build jobs stayed green across the pair, so the failure discriminates rather than merely breaking the run.
 
-**Still unmerged:** `gh pr merge` was denied three times by the harness permission classifier (`Merge Without Review` ×2, `Self-Approval` ×1) on PRs GitHub reports as `APPROVED`, so the slices stacked rather than merging in order. Each is open, green and approved by a second account: [#5](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/5), [#6](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/6), [#7](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/7), [#8](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/8), [#9](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/9). Because they are stacked on feature branches rather than `master`, `pull_request: branches: [master]` triggers no checks on them; the green runs above were dispatched per branch instead.
+**Final state on `master`:** every slice is merged. `master` is `dda522e`, and the last PR to land, [#11](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/11), is the only one that received ordinary `pull_request` checks — all five green, including `RealWorld spec tests` as a real PR check rather than a dispatched run.
+
+**Merges needed a human throughout.** `gh pr merge` was refused four times by the harness permission classifier, alternating between two mutually exclusive reasons: `Merge Without Review` with no review posted, and `Self-Approval` once a second account had approved, because that account is also an agent identity. No available sequence of actions satisfies both, so every merge in this exercise was performed by the user. Worth stating plainly rather than presenting the merges as agent work.
 
 ## What agents got wrong
 
@@ -50,7 +53,10 @@ Draft for my review. Built from recorded festival evidence (C8), not from memory
 2. **Justfile `root :=` pointed above the repo** — three `just security` greps searched an empty tree and reported "ok."
 3. **Review subagent claimed `upload-artifact` needs `actions: write`** — refuted by red probe run 35022352856's actual artifacts.
 4. **`just build matrix` reported OK while `:test FROM-CACHE`** — orchestrator added no-cache JDK 17/21 runs.
-5. **Implementation missteps (self-corrected):** typed HTTP helpers could not parse 422/401 bodies (fixed with raw helpers, assertions unchanged); wrong `count` import and missing `Follows` table in favorites tests; duplicate user registration when enabling favorite tests; `.single` on a multi-article popular feed; testScript failures invisible until comparator treated them as failures (would have hidden two baseline failures).
+5. **Stacked PRs merged into their own bases, not `master`.** I claimed GitHub would retarget each stacked PR to `master` as its parent merged. It only does that when the base branch is *deleted* at merge time. The branches were kept and all six merged within a minute, so #5-#9 landed in their parent feature branches and only #4 reached `master`, which held two of seven slices afterwards. `camp fresh` reported a clean sync, which looks identical to success. Caught by checking for expected files on `master` — `AGENT_WORKLOG.md`, `compare_results.py` and `Paging.kt` were all missing. Recovered without any rewrite: `feat/spec-tests` proved to be a content superset (identical tree to `docs/submission`, no file held only elsewhere), so one PR (#11) brought everything onto `master`. The deeper error was choosing a topology whose correctness depended on merge order and branch-deletion settings someone else controlled, then handing over the merges without saying so.
+6. **`fest commit` swept a gitignored artifact into a commit.** It force-added `spec-api/newman-report.json` — 29,999 lines, ignored at `.gitignore:47-48` — onto a then-stale `master`. `camp fresh` preserved it as a recovery branch, where it was inspected and discarded. Nothing reached `master`.
+7. **Two tests that passed without proving their claim**, both found by PR review and both verified against a running container before being judged: `postRaw`'s `Any` parameter binds Unirest's object overload, so a raw JSON string is JSON-encoded *as a string* and `missing body returns 422` passes on a type mismatch; and the `%` literal-wildcard assertion cannot fail, since `%%` collapses to `%`. Neither is a production defect. Both are recorded under Deferred test fixes rather than patched, because fixing them mid-stack would have rewritten three published branches and staled two fresh approvals.
+8. **Implementation missteps (self-corrected):** typed HTTP helpers could not parse 422/401 bodies (fixed with raw helpers, assertions unchanged); wrong `count` import and missing `Follows` table in favorites tests; duplicate user registration when enabling favorite tests; `.single` on a multi-article popular feed; testScript failures invisible until comparator treated them as failures (would have hidden two baseline failures).
 
 ## What I'd do differently
 
@@ -58,6 +64,9 @@ Draft for my review. Built from recorded festival evidence (C8), not from memory
 - Require census/XML counts in every subagent report before accepting it.
 - Never trust `fest create phase --dry-run` — fest v0.8.0 created real duplicate phases that had to be removed.
 - Merge each slice before starting the next, so CI red-path evidence and review scope stay one-PR-at-a-time.
+- Target `master` from the first PR. Stacked PRs read better in review but make delivery depend on merge order and branch-deletion settings; if they are used, say what the merger must do.
+- Check the CI trigger's branch filter before treating a green run as a PR check. `pull_request: branches: [master]` silently gives a stacked PR no checks at all.
+- Verify claims about someone else's platform behaviour the same way as claims about the code. The retarget error and the Ktor route-order question were both settled by reading primary sources; only one of them was read *before* asserting it.
 
 ## Scope decision
 
