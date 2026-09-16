@@ -47,6 +47,7 @@ fun Routing.articles(articleController: ArticleController, commentController: Co
         // demand a token. Keep this block above it.
         authenticate(optional = true) {
             get("search") { articleController.search(this.context) }
+            get("feed/popular") { articleController.popular(this.context) }
         }
         authenticate {
             get("feed") { articleController.feed(this.context) }

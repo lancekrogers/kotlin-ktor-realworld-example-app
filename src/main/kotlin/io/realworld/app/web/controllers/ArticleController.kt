@@ -81,4 +81,9 @@ class ArticleController(private val articleService: ArticleService) {
         val viewer = ctx.authentication.principal<User>()?.email
         ctx.respond(articleService.search(ctx.parameters["q"], ctx.parameters["limit"], ctx.parameters["offset"], viewer))
     }
+
+    suspend fun popular(ctx: ApplicationCall) {
+        val viewer = ctx.authentication.principal<User>()?.email
+        ctx.respond(articleService.popular(ctx.parameters["limit"], ctx.parameters["offset"], viewer))
+    }
 }

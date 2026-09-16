@@ -24,6 +24,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.lowerCase
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 internal object Articles : LongIdTable() {
@@ -105,6 +106,20 @@ class ArticleRepository {
             .limit(limit, offset)
             .toList()
         ArticlePage(toArticles(rows, viewerEmail), total)
+    }
+
+    fun popular(limit: Int, offset: Long, viewerEmail: String?): ArticlePage = transaction {
+        val favCount = ArticleFavorites.user.count()
+        val rankedIds = Articles.leftJoin(ArticleFavorites)
+            .slice(Articles.id, Articles.createdAt, favCount)
+            .selectAll()
+            .groupBy(Articles.id, Articles.createdAt)
+            .orderBy(favCount to SortOrder.DESC, Articles.createdAt to SortOrder.DESC, Articles.id to SortOrder.DESC)
+            .limit(limit, offset)
+            .map { it[Articles.id] }
+        val total = Articles.selectAll().count()
+        val rowsById = (Articles innerJoin Users).select { Articles.id inList rankedIds }.associateBy { it[Articles.id] }
+        ArticlePage(toArticles(rankedIds.mapNotNull { rowsById[it] }, viewerEmail), total)
     }
 
     /** Call inside a transaction. */
