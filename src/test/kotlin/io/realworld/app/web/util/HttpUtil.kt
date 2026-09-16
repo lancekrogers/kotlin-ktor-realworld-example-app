@@ -40,8 +40,16 @@ class HttpUtil(port: Int) {
     fun getRaw(path: String): HttpResponse<String> =
         Unirest.get(origin + path).headers(headers).asString()
 
+    // Serializes body through the registered ObjectMapper, which is what DTO call sites want. Do NOT
+    // pass a raw JSON string: the declared Any parameter binds Unirest's body(Object) overload, which
+    // would JSON-encode the string itself and send "{\"k\":1}" instead of {"k":1}. Use postRawJson.
     fun postRaw(path: String, body: Any): HttpResponse<String> =
         Unirest.post(origin + path).headers(headers).body(body).asString()
+
+    // Unirest picks its body() overload from the DECLARED parameter type, so this String parameter
+    // binds body(String) and sends the bytes unchanged. Use it for hand-written JSON.
+    fun postRawJson(path: String, rawJson: String): HttpResponse<String> =
+        Unirest.post(origin + path).headers(headers).body(rawJson).asString()
 
     fun deleteRaw(path: String): HttpResponse<String> =
         Unirest.delete(origin + path).headers(headers).asString()

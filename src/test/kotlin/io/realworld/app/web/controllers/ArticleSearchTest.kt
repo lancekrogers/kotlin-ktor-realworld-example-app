@@ -107,10 +107,14 @@ class ArticleSearchTest {
         val token = UUID.randomUUID().toString().take(8)
         loginAs(token)
         createArticle("${token}100% pure_x", "body")
+        // Decoy, matched only if '%' is treated as a wildcard. No underscore in it, so it cannot
+        // interfere with the underscore assertions below.
+        createArticle("${token}100XX plain", "body")
         val percentResponse = search("${token}100%")
         assertEquals(HttpStatus.SC_OK, percentResponse.status)
         assertEquals(1, percentResponse.body.articlesCount)
         assertEquals(1, percentResponse.body.articles.size)
+        assertEquals("${token}100% pure_x", percentResponse.body.articles.single().title)
 
         val secondTitle = "${token}1000 purex"
         createArticle(secondTitle, "body")
