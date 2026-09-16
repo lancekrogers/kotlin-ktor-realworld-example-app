@@ -7,6 +7,8 @@ import io.ktor.auth.jwt.jwt
 import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.util.StdDateFormat
 import io.ktor.jackson.jackson
 import io.ktor.routing.Routing
 import io.ktor.server.cio.CIO
@@ -70,6 +72,8 @@ fun Application.mainModule() {
     install(CallLogging)
     install(ContentNegotiation) {
         jackson {
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            dateFormat = StdDateFormat().withColonInTimeZone(true)
         }
     }
     install(Authentication) {

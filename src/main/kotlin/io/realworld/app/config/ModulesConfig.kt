@@ -24,7 +24,7 @@ object ModulesConfig {
         bind() from singleton { UserRepository() }
     }
     private val articleModule = Kodein.Module("ARTICLE") {
-        bind() from singleton { ArticleController() }
+        bind() from singleton { ArticleController(instance()) }
         bind() from singleton { ArticleRepository() }
         bind() from singleton { ArticleService(instance()) }
     }
