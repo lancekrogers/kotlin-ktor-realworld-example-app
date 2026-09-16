@@ -1,5 +1,4 @@
 # GET /articles list and filters are still stubbed (D001)
-Articles / All Articles
 Articles / Articles by Author
 Articles / Articles Favorited by Username
 Articles / Articles by Tag
