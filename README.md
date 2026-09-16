@@ -1,8 +1,6 @@
-[![Travis](https://img.shields.io/travis/Rudge/kotlin-ktor-realworld-example-app.svg)](https://travis-ci.org/Rudge/kotlin-ktor-realworld-example-app/builds)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5b6503dfa3024a0dbbf173e333f80bcf)](https://app.codacy.com/app/Rudge/kotlin-ktor-realworld-example-app?utm_source=github.com&utm_medium=referral&utm_content=Rudge/kotlin-ktor-realworld-example-app&utm_campaign=Badge_Grade_Dashboard)
-[![BCH compliance](https://bettercodehub.com/edge/badge/Rudge/kotlin-ktor-realworld-example-app?branch=master)](https://bettercodehub.com/)
+[![CI](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/actions/workflows/gradle.yml/badge.svg?branch=master)](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/actions/workflows/gradle.yml)
 
-# ![RealWorld Example App](logo.png)
+# RealWorld Example App
 
 > ### Kotlin + Ktor codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld) spec and API
 
@@ -12,7 +10,7 @@ This codebase was created to demonstrate a fully fledged fullstack application b
 
 We've gone to great lengths to adhere to the **Kotlin + Ktor** community styleguides & best practices.
 
-For more information on how to this works with other frontends/backends, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
+For more information on how this works with other frontends/backends, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
 
 # How it works
 
@@ -35,20 +33,21 @@ Tests:
 
 #### Structure
       + config/
-          All app setups. Ktor, Kodein and Database
+          App setup: Ktor, Kodein modules and the database
       + domain/
+          Models (Article, Comment, Profile, Tag, User, Paging) and domain exceptions
         + repository/
-            Persistence layer and tables definition
+            Persistence layer and table definitions
         + service/
-            Logic layer and transformation data
+            Logic layer and data transformation
       + ext/
-          Extension of String for email validation
+          String extensions: email validation and slug generation
       + utils/
-          Jwt and Encrypt classes
+          JWT and password-encoding helpers
       + web/
-        + controllers
-            Classes and methods to mapping actions of routes
-        Router definition to features and exceptions
+        + controllers/
+            Classes and methods mapping route actions
+        Router definition for features, and exception-to-response mapping
       - App.kt <- The main class
 
 # Development
@@ -63,6 +62,7 @@ just build matrix       # compile on JDK 17 and 21
 just test all           # run the suite
 just test census        # what actually ran vs. what is skipped
 just docker up          # start the app on http://localhost:18080
+just docker down        # stop the container
 just docker spec        # run the RealWorld Postman collection against the running app
 just docker smoke       # exercise the auth flow and assert responses
 just security audit     # supply-chain, secret, and wrapper checks
@@ -112,7 +112,7 @@ matching articles**, not the size of the returned page — use it for pagination
 With a valid token, each article's `favorited` and `author.following` reflect the viewer.
 
 ```json
-{"articles":[{"slug":"zephyrine-readme-1789553063-article","title":"Zephyrine readme 1789553063 article","description":"desc","body":"Body with zephyrine keyword 1789553063","tagList":["readme"],"createdAt":"2026-09-16T10:04:24.310+00:00","updatedAt":"2026-09-16T10:04:24.310+00:00","favorited":false,"favoritesCount":0,"author":{"username":"readme_a_1789553063","bio":null,"image":null,"following":false}}],"articlesCount":1}
+{"articles":[{"slug":"how-to-train-your-dragon","title":"How to train your dragon","description":"Ever wonder how?","body":"It takes a Jacobian and a dragon","tagList":["dragons","training"],"createdAt":"2026-09-16T10:04:24.310+00:00","updatedAt":"2026-09-16T10:04:24.310+00:00","favorited":false,"favoritesCount":0,"author":{"username":"jake","bio":null,"image":null,"following":false}}],"articlesCount":1}
 ```
 
 Errors (all **422** unless noted):
@@ -133,7 +133,7 @@ system, not the page size.
 Same `limit` (`1`–`100`, default `20`) and `offset` (`≥ 0`, default `0`) as search.
 
 ```json
-{"articles":[{"slug":"popular-readme-1789553063-favorite-target","title":"Popular readme 1789553063 favorite target","description":"desc","body":"body","tagList":[],"createdAt":"2026-09-16T10:04:24.334+00:00","updatedAt":"2026-09-16T10:04:24.334+00:00","favorited":false,"favoritesCount":1,"author":{"username":"readme_b_1789553063","bio":null,"image":null,"following":false}},{"slug":"zephyrine-readme-1789553063-article","title":"Zephyrine readme 1789553063 article","description":"desc","body":"Body with zephyrine keyword 1789553063","tagList":["readme"],"createdAt":"2026-09-16T10:04:24.310+00:00","updatedAt":"2026-09-16T10:04:24.310+00:00","favorited":false,"favoritesCount":0,"author":{"username":"readme_a_1789553063","bio":null,"image":null,"following":false}}],"articlesCount":2}
+{"articles":[{"slug":"dragon-care-101","title":"Dragon care 101","description":"Feeding and grooming","body":"Start with the teeth","tagList":["dragons"],"createdAt":"2026-09-16T10:04:24.334+00:00","updatedAt":"2026-09-16T10:04:24.334+00:00","favorited":false,"favoritesCount":1,"author":{"username":"anah","bio":null,"image":null,"following":false}},{"slug":"how-to-train-your-dragon","title":"How to train your dragon","description":"Ever wonder how?","body":"It takes a Jacobian and a dragon","tagList":["dragons","training"],"createdAt":"2026-09-16T10:04:24.310+00:00","updatedAt":"2026-09-16T10:04:24.310+00:00","favorited":false,"favoritesCount":0,"author":{"username":"jake","bio":null,"image":null,"following":false}}],"articlesCount":2}
 ```
 
 Errors: same paging validation as search (**422**); invalid token → **401**.
@@ -158,7 +158,7 @@ direction from a profile's `favoritesCount`.
 {"stats":{"articlesCount":1,"commentsCount":1,"favoritesCount":1}}
 ```
 
-A user who authored one article, commented once, and favorited once article returns `1/1/1`. A user who
+A user who authored one article, commented once, and favorited one article returns `1/1/1`. A user who
 authored one article but gave no favorites returns `{"stats":{"articlesCount":1,"commentsCount":0,"favoritesCount":0}}`
 even when their article received favorites from others.
 
@@ -190,18 +190,6 @@ These RealWorld endpoints are not implemented in this fork:
 - get, update, and delete by slug
 - comment list and delete
 - profile get, follow, and unfollow
-
-# Getting started
-
-Docker is the only prerequisite — no host JDK or Gradle.
-
-```bash
-just docker up      # app at http://localhost:18080
-just test all       # full test suite in containers
-just build matrix   # build on JDK 17 and 21
-just docker spec    # RealWorld Postman collection against the running app
-just docker down    # stop the container
-```
 
 # CI
 
