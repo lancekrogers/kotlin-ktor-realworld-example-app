@@ -98,31 +98,37 @@ Tests:
 
 # Development
 
-All tasks run through [`just`](https://github.com/casey/just), in containers. Docker is the
-only prerequisite — no local JDK or Gradle needed.
+Everything runs in Docker through [`just`](https://github.com/casey/just). You do not need
+a JDK or Gradle on your machine.
 
 ```
-just                    # list every recipe, grouped by module
-just build compile      # fastest feedback loop
-just build matrix       # compile on JDK 17 and 21
+just                    # list recipes
+just build compile      # compile main sources
+just build matrix       # build on JDK 17 and 21
 just test all           # run the suite
-just test census        # what actually ran vs. what is skipped
+just test census        # which tests ran and which are skipped
 just docker up          # start the app on http://localhost:18080
-just docker down        # stop the container
-just docker spec        # run the RealWorld Postman collection against the running app
-just docker smoke       # exercise the auth flow and assert responses
+just docker down        # stop it
+just docker spec        # RealWorld Postman collection, checked against spec-api/expected-failures.txt
+just docker smoke       # register, log in, hit a few endpoints
 just security audit     # supply-chain, secret, and wrapper checks
-just gate               # everything: both JDKs, tests, security checks
+just gate               # what CI runs: both JDKs, tests, security checks
 ```
 
-Recipes live in `.justfiles/*.just`, one module per concern (`build`, `test`, `docker`,
-`security`). Run a module bare to see its recipes, e.g. `just security`.
+Recipes are split by area under `.justfiles/`: `build`, `test`, `docker`, `security`.
+`just test` on its own lists that group.
 
-`just gate` is the pre-push check. It builds on JDK 17 and 21, runs the suite, and re-runs the
-checks derived from the security review, so a fixed finding cannot silently regress.
+Run `just gate` before pushing.
 
-Copy `.env.example` to `.env` to set `JWT_SECRET`; `just` loads it automatically. Without it the
-app generates an ephemeral signing key at startup and warns.
+`just test all` runs `cleanTest` and turns the Gradle build cache off, so the tests execute
+every time. Plain `gradle test` can report success with `:test FROM-CACHE` and run nothing.
+
+`just docker spec` shows 18 newman failures. Those are the stubbed endpoints listed in
+`spec-api/expected-failures.txt`. The recipe passes when the failures match that list and
+fails on any other failure, or on a listed request that starts passing.
+
+`JWT_SECRET` comes from `.env`; copy `.env.example` to start. Without one, the app makes a
+random key at startup and logs a warning.
 
 # API additions
 

@@ -124,7 +124,11 @@ verify:
     trap 'just docker down' EXIT
     just docker smoke
 
-# Run the RealWorld Postman collection against the running app container
+# Run the RealWorld Postman collection against the running app container, then
+# check its failures against spec-api/expected-failures.txt the way CI does.
+# Newman itself exits non-zero whenever any request fails, and 18 requests fail
+# by design because their endpoints are stubbed, so its exit code is ignored and
+# the comparator decides: it passes only when the failures match the manifest.
 [no-cd]
 spec:
     #!/usr/bin/env bash
@@ -135,4 +139,8 @@ spec:
     docker run --rm --network container:{{container_name}} \
         -v {{root}}/spec-api:/spec -w /spec \
         -e APIURL=http://localhost:8080 -e REPORT=/spec/newman-report.json \
-        node:22-bookworm-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5 ./run-api-tests.sh
+        node:22-bookworm-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5 ./run-api-tests.sh || true
+    echo "=== spec: compare against expected-failures.txt ==="
+    docker run --rm -v {{root}}/spec-api:/spec -w /spec \
+        python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea \
+        python3 compare_results.py newman-report.json expected-failures.txt
