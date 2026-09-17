@@ -42,9 +42,7 @@ planning output before implementation started.
    foundation, search, popular feed, user activity, the RealWorld spec job,
    and docs. Each sequence ended with `just gate` on JDK 17 and 21, a test
    census read from the JUnit XML, a read-only review agent, and a PR.
-4. **Human merges.** Every merge was performed by me. The agent harness refused
-   to merge its own PRs, which is the right default, and the work log records
-   what that cost.
+4. **Human merges.** Every merge was performed by me.
 
 The full account, including what the agents got wrong and what I would do
 differently, is in [AGENT_WORKLOG.md](AGENT_WORKLOG.md). The camp holds the
