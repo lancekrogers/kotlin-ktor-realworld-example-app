@@ -9,26 +9,31 @@ cache_volume := "ktor-gradle-cache"
 default:
     @just --list --unsorted --justfile {{source_file()}}
 
+# The test recipes run `cleanTest` first and pass `--no-build-cache`. Without
+# both, Gradle can report BUILD SUCCESSFUL with `:test FROM-CACHE` having run
+# nothing, and `census` then describes a run that never happened.
+test_args := "cleanTest test --no-build-cache"
+
 # Run the whole suite
 [no-cd]
 all:
-    @just build gradle test
+    @just build gradle "{{test_args}}"
 
 # Run one test class (e.g. just test only UserControllerTest)
 [no-cd]
 only pattern:
-    @just build gradle "test --tests '*{{pattern}}*'"
+    @just build gradle "{{test_args}} --tests '*{{pattern}}*'"
 
 # Run the suite with full output
 [no-cd]
 verbose:
-    @just build gradle "test --info"
+    @just build gradle "{{test_args}} --info"
 
 # Run the suite on a specific JDK
 [no-cd]
 jdk version:
     @docker run --rm -v {{root}}:/app -w /app -v {{cache_volume}}:/home/gradle/.gradle \
-        gradle:{{gradle_version}}-jdk{{version}} gradle --no-daemon test
+        gradle:{{gradle_version}}-jdk{{version}} gradle --no-daemon {{test_args}}
 
 # Summarize the last run: what ran, passed, failed, and what is skipped.
 #
