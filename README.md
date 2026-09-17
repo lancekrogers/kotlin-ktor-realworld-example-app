@@ -22,7 +22,7 @@ the code. The camp for this exercise is public:
 
 ![Festival replay: each task lights up in the order it was executed](docs/festival-replay.gif)
 
-The replay above is generated from the festival's own progress log. Each row is
+The replay above is generated from the [festival's](https://github.com/lancekrogers/kotlin-example-camp/tree/main/festivals/active/fde-technical-exercise-FT0001) progress log with the [fest gif](https://docs.fest.build/cli-reference/fest/fest_gif/) command. Each row is
 a task; the gates at the end of every sequence are testing, review, iterate and
 commit, and the approval-judge steps show where a second model checked the
 planning output before implementation started.
