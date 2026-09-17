@@ -12,6 +12,54 @@ We've gone to great lengths to adhere to the **Kotlin + Ktor** community stylegu
 
 For more information on how this works with other frontends/backends, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
 
+# How this fork was improved
+
+The work on this fork was planned and executed with the
+[Festival Methodology](https://fest.build) inside a camp, a versioned workspace
+that holds the plan, every decision, and the evidence for each step alongside
+the code. The camp for this exercise is public:
+**[lancekrogers/kotlin-example-camp](https://github.com/lancekrogers/kotlin-example-camp)**.
+
+![Festival replay: each task lights up in the order it was executed](docs/festival-replay.gif)
+
+The replay above is generated from the festival's own progress log. Each row is
+a task; the gates at the end of every sequence are testing, review, iterate and
+commit, and the approval-judge steps show where a second model checked the
+planning output before implementation started.
+
+## The process, in order
+
+1. **Security audit before anything ran.** A single Claude Code session did a
+   static review of the unfamiliar codebase and containerized the toolchain
+   ([PR #1](https://github.com/lancekrogers/kotlin-ktor-realworld-example-app/pull/1)).
+   Nothing executed on the host until that landed.
+2. **Ingest and plan.** The brief, the audit and the repo state were ingested
+   into requirements and constraints, then broken into twelve recorded
+   decisions and seven implementation sequences, with an eighth added after
+   PR review to fix two tests that could not fail. An approval judge reviewed
+   both checkpoints and rejected the first plan for a stale scope statement.
+3. **One sequence per slice, every slice gated.** CI first, then the article
+   foundation, search, popular feed, user activity, the RealWorld spec job,
+   and docs. Each sequence ended with `just gate` on JDK 17 and 21, a test
+   census read from the JUnit XML, a read-only review agent, and a PR.
+4. **Human merges.** Every merge was performed by me. The agent harness refused
+   to merge its own PRs, which is the right default, and the work log records
+   what that cost.
+
+The full account, including what the agents got wrong and what I would do
+differently, is in [AGENT_WORKLOG.md](AGENT_WORKLOG.md). The camp holds the
+task files, the decisions (`002_PLAN/decisions/`), the per-sequence results and
+the judge verdicts, so every claim in the work log can be traced to a file.
+
+## By the numbers
+
+| | Before | After |
+|---|---|---|
+| Running tests | 4 | 94 |
+| CI runs on the fork | 0 | every push and PR, JDK 17 and 21, plus the RealWorld spec job |
+| Public read endpoints | 0 | 3 |
+| Merged PRs | 0 | 11 |
+
 # How it works
 
 The application was built with:
