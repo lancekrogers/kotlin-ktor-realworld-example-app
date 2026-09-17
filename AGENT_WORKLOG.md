@@ -76,7 +76,7 @@ The brief says "Choose one"; I shipped **all three** as ordered slices so the fo
 
 **Still stubbed:** article list/filter/feed/get/update/delete, comment list/delete, profile get/follow/unfollow — each skipped test cites why in its `@Ignore` reason.
 
-**Deferred bug (R8):** `unfollow` deletes the wrong `Follows` row orientation; no named feature wires follow/unfollow, so it stays unreachable and unfixed.
+**Bug R8, fixed after submission review:** `unfollow` deleted the wrong `Follows` row orientation (caller and target swapped), so a follow could never be undone. Fixed in `UserRepository.unfollow` with `UserFollowsRepositoryTest`, which fails on the old code. The follow and unfollow routes themselves remain stubbed.
 
 **Two unfalsifiable tests, found by review and since fixed.** Both passed without proving their claim. Neither was a production defect — both underlying paths were verified against a running container first — and both were deferred while the slices were stacked, because fixing them would have rewritten published branches carrying fresh approvals. Once everything merged and those branches were deleted that reason expired, so they were fixed as their own festival sequence rather than left as a note.
 
