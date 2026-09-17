@@ -2,6 +2,7 @@ package io.realworld.app.domain.repository
 
 import io.realworld.app.domain.Article
 import io.realworld.app.domain.Profile
+import io.realworld.app.domain.exceptions.ForbiddenException
 import io.realworld.app.domain.exceptions.NotFoundException
 import io.realworld.app.ext.uniqueSlug
 import java.util.Date
@@ -10,11 +11,13 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.count
 import org.jetbrains.exposed.sql.LikePattern
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inSubQuery
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.Table
@@ -26,6 +29,7 @@ import org.jetbrains.exposed.sql.lowerCase
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
 internal object Articles : LongIdTable() {
     val slug: Column<String> = varchar("slug", 255).uniqueIndex()
@@ -56,7 +60,7 @@ class ArticleRepository {
         transaction {
             // One call: SchemaUtils sorts by foreign-key references and skips existing tables,
             // so this is safe no matter which repository Kodein constructs first.
-            SchemaUtils.create(Users, Tags, Articles, ArticleTags, ArticleFavorites)
+            SchemaUtils.create(Users, Tags, Articles, ArticleTags, ArticleFavorites, Comments)
         }
     }
 
@@ -81,6 +85,74 @@ class ArticleRepository {
     }
 
     fun findBySlug(slug: String, viewerEmail: String?): Article? = transaction { loadBySlug(slug, viewerEmail) }
+
+    /**
+     * GET /articles. Filters combine with AND. An unknown author or favoriting user simply matches
+     * nothing, which the spec answers with an empty list rather than 404.
+     */
+    fun findBy(tag: String?, author: String?, favorited: String?, limit: Int, offset: Long, viewerEmail: String?): ArticlePage =
+        transaction {
+            var where: Op<Boolean> = Op.TRUE
+            if (author != null) where = where and (Users.username eq author)
+            if (tag != null) {
+                val tagged = (ArticleTags innerJoin Tags).slice(ArticleTags.article).select { Tags.name eq tag }
+                where = where and (Articles.id inSubQuery tagged)
+            }
+            if (favorited != null) {
+                val favs = (ArticleFavorites innerJoin Users).slice(ArticleFavorites.article).select { Users.username eq favorited }
+                where = where and (Articles.id inSubQuery favs)
+            }
+            newestFirst(where, limit, offset, viewerEmail)
+        }
+
+    /** GET /articles/feed: articles by authors the viewer follows, newest first. */
+    fun feed(viewerEmail: String, limit: Int, offset: Long): ArticlePage = transaction {
+        val viewerId = Users.select { Users.email eq viewerEmail }.singleOrNull()?.get(Users.id)
+            ?: throw NotFoundException("User not found.")
+        val followed = Follows.select { Follows.follower eq viewerId.value }.map { EntityID(it[Follows.user], Users) }
+        if (followed.isEmpty()) ArticlePage(emptyList(), 0)
+        else newestFirst(Articles.author inList followed, limit, offset, viewerEmail)
+    }
+
+    /** Only the author may update. A changed title gets a fresh unique slug. */
+    fun update(email: String, slug: String, title: String?, slugBase: String?, description: String?, body: String?): Article =
+        transaction {
+            val (userId, articleId) = userAndArticle(email, slug)
+            val row = Articles.select { Articles.id eq articleId }.single()
+            if (row[Articles.author].value != userId.value) throw ForbiddenException("Only the author can update this article.")
+            val newSlug = if (title != null && title != row[Articles.title] && slugBase != null)
+                uniqueSlug(slugBase) { candidate -> candidate != slug && !Articles.select { Articles.slug eq candidate }.empty() }
+            else slug
+            Articles.update({ Articles.id eq articleId }) {
+                if (title != null) { it[Articles.title] = title; it[Articles.slug] = newSlug }
+                if (description != null) it[Articles.description] = description
+                if (body != null) it[Articles.body] = body
+                it[updatedAt] = System.currentTimeMillis()
+            }
+            requireNotNull(loadBySlug(newSlug, email))
+        }
+
+    /** Only the author may delete. Comments, favorites and tag links go with the article. */
+    fun delete(email: String, slug: String): Unit = transaction {
+        val (userId, articleId) = userAndArticle(email, slug)
+        val row = Articles.select { Articles.id eq articleId }.single()
+        if (row[Articles.author].value != userId.value) throw ForbiddenException("Only the author can delete this article.")
+        Comments.deleteWhere { Comments.article eq articleId }
+        ArticleFavorites.deleteWhere { ArticleFavorites.article eq articleId }
+        ArticleTags.deleteWhere { ArticleTags.article eq articleId }
+        Articles.deleteWhere { Articles.id eq articleId }
+    }
+
+    /** Call inside a transaction. */
+    private fun newestFirst(where: Op<Boolean>, limit: Int, offset: Long, viewerEmail: String?): ArticlePage {
+        val joined = Articles innerJoin Users
+        val total = joined.select { where }.count()
+        val rows = joined.select { where }
+            .orderBy(Articles.createdAt to SortOrder.DESC, Articles.id to SortOrder.DESC)
+            .limit(limit, offset)
+            .toList()
+        return ArticlePage(toArticles(rows, viewerEmail), total)
+    }
 
     fun favorite(email: String, slug: String): Article = transaction {
         val (userId, articleId) = userAndArticle(email, slug)

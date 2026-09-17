@@ -74,7 +74,7 @@ The brief says "Choose one"; I shipped **all three** as ordered slices so the fo
 
 **Implemented:** article create, search, popular feed, favorites, comments, profile stats, CI matrix, Newman spec job with expected-failures manifest.
 
-**Still stubbed:** article list/filter/feed/get/update/delete, comment list/delete, profile get/follow/unfollow — each skipped test cites why in its `@Ignore` reason.
+**Formerly stubbed, since implemented:** article list/filter/feed/get/update/delete, comment list/delete, profile get/follow/unfollow. The bundled RealWorld collection now passes in full and `spec-api/expected-failures.txt` is empty; the author's `@Ignore`d tests for these routes are enabled.
 
 **Bug R8, fixed after submission review:** `unfollow` deleted the wrong `Follows` row orientation (caller and target swapped), so a follow could never be undone. Fixed in `UserRepository.unfollow` with `UserFollowsRepositoryTest`, which fails on the old code. The follow and unfollow routes themselves remain stubbed.
 

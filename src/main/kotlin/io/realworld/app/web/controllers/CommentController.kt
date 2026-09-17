@@ -2,9 +2,11 @@ package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
 import io.ktor.auth.authentication
+import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.realworld.app.domain.CommentDTO
+import io.realworld.app.domain.CommentsDTO
 import io.realworld.app.domain.User
 import io.realworld.app.domain.service.CommentService
 
@@ -19,18 +21,17 @@ class CommentController(private val commentService: CommentService) {
         ctx.respond(CommentDTO(commentService.add(slug, email, comment)))
     }
 
-    fun findBySlug(ctx: ApplicationCall) {
-        ctx.parameters["slug"]
-//            commentService.findBySlug(this).also { comments ->
-//                ctx.json(CommentsDTO(comments))
-//            }
-
+    suspend fun findBySlug(ctx: ApplicationCall) {
+        val viewer = ctx.authentication.principal<User>()?.email
+        val slug = requireNotNull(ctx.parameters["slug"]) { "slug is required." }
+        ctx.respond(CommentsDTO(commentService.findBySlug(slug, viewer)))
     }
 
-    fun delete(ctx: ApplicationCall) {
-        val slug = ctx.parameters["slug"]
-        val id = ctx.parameters["id"]
-//        commentService.delete(id, slug)
+    suspend fun delete(ctx: ApplicationCall) {
+        val email = ctx.authentication.principal<User>()?.email
+        require(!email.isNullOrBlank()) { "User not logged." }
+        val slug = requireNotNull(ctx.parameters["slug"]) { "slug is required." }
+        commentService.delete(email, slug, ctx.parameters["id"])
+        ctx.respond(HttpStatusCode.OK)
     }
-
 }

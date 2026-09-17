@@ -6,6 +6,7 @@ import io.ktor.features.StatusPages
 import io.ktor.http.HttpStatusCode
 import io.ktor.response.respond
 import io.ktor.util.pipeline.PipelineContext
+import io.realworld.app.domain.exceptions.ForbiddenException
 import io.realworld.app.domain.exceptions.NotFoundException
 import io.realworld.app.domain.exceptions.UnauthorizedException
 import org.slf4j.LoggerFactory
@@ -33,6 +34,9 @@ object ErrorExceptionMapping {
         }
         exception<NotFoundException> { cause ->
             respondError(HttpStatusCode.NotFound, cause.message)
+        }
+        exception<ForbiddenException> { cause ->
+            respondError(HttpStatusCode.Forbidden, cause.message)
         }
         // require(...) in the DTO validators throws this; the spec asks for 422 on validation.
         exception<IllegalArgumentException> { cause ->

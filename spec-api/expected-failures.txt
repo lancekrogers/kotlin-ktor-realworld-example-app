@@ -1,31 +1,3 @@
-# GET /articles list and filters are still stubbed (D001)
-Articles / All Articles
-Articles / Articles by Author
-Articles / Articles Favorited by Username
-Articles / Articles by Tag
-
-# GET /articles/feed is still stubbed (D001)
-Articles, Favorite, Comments / Feed
-
-# GET /articles list and filters are still stubbed; create article above sets slug for later requests (D001)
-Articles, Favorite, Comments / All Articles
-Articles, Favorite, Comments / All Articles with auth
-Articles, Favorite, Comments / Articles by Author
-Articles, Favorite, Comments / Articles by Author with auth
-Articles, Favorite, Comments / Articles Favorited by Username
-Articles, Favorite, Comments / Articles Favorited by Username with auth
-Articles, Favorite, Comments / Articles by Tag
-
-# GET /articles/:slug is still stubbed (D001)
-Articles, Favorite, Comments / Single Article by slug
-
-# PUT /articles/:slug is still stubbed (D001)
-Articles, Favorite, Comments / Update Article
-
-# GET /articles/:slug/comments is still stubbed (D001)
-Articles, Favorite, Comments / All Comments for Article
-
-# Profile endpoints are still stubbed (D001, D010)
-Profiles / Profile
-Profiles / Follow Profile
-Profiles / Unfollow Profile
+# Newman request names ("Folder / Request") that are allowed to fail because the endpoint is stubbed.
+# Empty: every request in the collection passes. Add an entry only when an endpoint is deliberately
+# stubbed; remove it when the endpoint is implemented.

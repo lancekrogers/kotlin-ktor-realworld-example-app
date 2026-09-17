@@ -113,9 +113,14 @@ class UserRepository {
         val user = findByEmail(email) ?: throw NotFoundException("Email not found to follow")
         val userToFollow = findByUsername(usernameToFollow) ?: throw NotFoundException("Username not found to follow")
         transaction {
-            Follows.insert { row ->
-                row[Follows.user] = userToFollow.id!!
-                row[follower] = user.id!!
+            val already = !Follows.select {
+                (Follows.user eq userToFollow.id!!) and (Follows.follower eq user.id!!)
+            }.empty()
+            if (!already) {
+                Follows.insert { row ->
+                    row[Follows.user] = userToFollow.id!!
+                    row[follower] = user.id!!
+                }
             }
         }
         return userToFollow

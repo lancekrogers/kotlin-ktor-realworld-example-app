@@ -123,9 +123,8 @@ Run `just gate` before pushing.
 `just test all` runs `cleanTest` and turns the Gradle build cache off, so the tests execute
 every time. Plain `gradle test` can report success with `:test FROM-CACHE` and run nothing.
 
-`just docker spec` shows 18 newman failures. Those are the stubbed endpoints listed in
-`spec-api/expected-failures.txt`. The recipe passes when the failures match that list and
-fails on any other failure, or on a listed request that starts passing.
+`just docker spec` runs the full RealWorld Postman collection against the container and compares
+any failures with `spec-api/expected-failures.txt`. That manifest is empty: every request passes.
 
 `JWT_SECRET` comes from `.env`; copy `.env.example` to start. Without one, the app makes a
 random key at startup and logs a warning.
@@ -190,8 +189,8 @@ Same `limit` (`1`–`100`, default `20`) and `offset` (`≥ 0`, default `0`) as 
 
 Errors: same paging validation as search (**422**); invalid token → **401**.
 
-> **Not the personal feed.** `GET /articles/feed` (without `/popular`) is still stubbed and requires a
-> token.
+> **Not the personal feed.** `GET /articles/feed` (without `/popular`) is the feed of authors you
+> follow and requires a token.
 
 ## `GET /profiles/{username}/stats`
 
@@ -224,24 +223,25 @@ even when their article received favorites from others.
 Slugs are derived from the article title (kebab-case, diacritics stripped). On collision the suffix
 `-2`, `-3`, … is appended. The words `search` and `feed` are reserved and cannot be used as slugs.
 
-## Implemented write routes (for exercising the reads)
+## The rest of the RealWorld API
 
-| Route | Status | Notes |
+The endpoints the fork originally stubbed are implemented, and the bundled Postman collection
+passes in full (31 requests, 280 assertions).
+
+| Route | Auth | Notes |
 |---|---|---|
-| `POST /articles` | **200** with created article | **422** on blank title/description/body; **401** without token |
-| `POST /articles/{slug}/favorite` | **200**, idempotent | **404** unknown slug; **401** without token |
-| `DELETE /articles/{slug}/favorite` | **200**, idempotent | same errors as POST |
-| `POST /articles/{slug}/comments` | **200** with `Profile` author | **422** blank body; **404** unknown slug; **401** without token |
-
-## Still stubbed
-
-These RealWorld endpoints are not implemented in this fork:
-
-- article list and filters (`GET /articles` with query params)
-- personal feed (`GET /articles/feed`)
-- get, update, and delete by slug
-- comment list and delete
-- profile get, follow, and unfollow
+| `GET /articles?tag=&author=&favorited=&limit=&offset=` | optional | filters combine with AND; unknown names match nothing; newest first; `articlesCount` is the total |
+| `GET /articles/feed` | required | articles by authors you follow, newest first; **401** without a token |
+| `GET /articles/{slug}` | optional | **404** unknown slug |
+| `PUT /articles/{slug}` | author only | any of `title`, `description`, `body`; a new title gets a new slug; **403** for anyone else |
+| `DELETE /articles/{slug}` | author only | removes comments, favorites and tag links with it; **403** for anyone else |
+| `POST /articles` | required | **422** on blank title/description/body |
+| `POST` / `DELETE /articles/{slug}/favorite` | required | idempotent; **404** unknown slug |
+| `GET /articles/{slug}/comments` | optional | oldest first; `author.following` reflects the viewer |
+| `POST /articles/{slug}/comments` | required | **422** blank body; **404** unknown slug |
+| `DELETE /articles/{slug}/comments/{id}` | comment author only | **404** unknown comment; **403** for anyone else |
+| `GET /profiles/{username}` | optional | **404** unknown username |
+| `POST` / `DELETE /profiles/{username}/follow` | required | idempotent |
 
 # CI
 
