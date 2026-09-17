@@ -1,32 +1,36 @@
 package io.realworld.app.web.controllers
 
 import io.ktor.application.ApplicationCall
+import io.ktor.auth.authentication
 import io.ktor.response.respond
+import io.realworld.app.domain.ProfileDTO
 import io.realworld.app.domain.ProfileStatsDTO
+import io.realworld.app.domain.User
 import io.realworld.app.domain.service.ProfileStatsService
+import io.realworld.app.domain.service.UserService
 
-class ProfileController(private val profileStatsService: ProfileStatsService) {
-    //class ProfileController(private val userService: UserService) {
-    fun get(ctx: ApplicationCall) {
-        ctx.parameters["username"]
-//            userService.getProfileByUsername(ctx.attribute("email")!!, usernameFollowing).also { profile ->
-//                ctx.json(ProfileDTO(profile))
+class ProfileController(private val userService: UserService, private val profileStatsService: ProfileStatsService) {
+    suspend fun get(ctx: ApplicationCall) {
+        val viewer = ctx.authentication.principal<User>()?.email
+        ctx.respond(ProfileDTO(userService.getProfileByUsername(viewer, username(ctx))))
     }
 
-    fun follow(ctx: ApplicationCall) {
-        ctx.parameters["username"]
-//            userService.follow(ctx.attribute("email")!!, usernameToFollow).also { profile ->
-//                ctx.json(ProfileDTO(profile))
+    suspend fun follow(ctx: ApplicationCall) {
+        val email = ctx.authentication.principal<User>()?.email
+        require(!email.isNullOrBlank()) { "User not logged." }
+        ctx.respond(ProfileDTO(userService.follow(email, username(ctx))))
     }
 
-    fun unfollow(ctx: ApplicationCall) {
-        ctx.parameters["username"]
-//            userService.unfollow(ctx.attribute("email")!!, usernameToUnfollow).also { profile ->
-//                ctx.json(ProfileDTO(profile))
+    suspend fun unfollow(ctx: ApplicationCall) {
+        val email = ctx.authentication.principal<User>()?.email
+        require(!email.isNullOrBlank()) { "User not logged." }
+        ctx.respond(ProfileDTO(userService.unfollow(email, username(ctx))))
     }
 
     suspend fun stats(ctx: ApplicationCall) {
-        val username = requireNotNull(ctx.parameters["username"]) { "username is required." }
-        ctx.respond(ProfileStatsDTO(profileStatsService.stats(username)))
+        ctx.respond(ProfileStatsDTO(profileStatsService.stats(username(ctx))))
     }
+
+    private fun username(ctx: ApplicationCall): String =
+        requireNotNull(ctx.parameters["username"]) { "username is required." }
 }

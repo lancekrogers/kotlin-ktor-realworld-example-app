@@ -42,11 +42,11 @@ class UserService(private val jwtProvider: JwtProvider, private val userReposito
         return user.withToken()
     }
 
-    fun getProfileByUsername(email: String, usernameFollowing: String): Profile {
-        return userRepository.findByUsername(usernameFollowing).let { user ->
-            user ?: throw NotFoundException("User not found to find.")
-            Profile(user.username, user.bio, user.image, userRepository.findIsFollowUser(email, user.id!!))
-        }
+    /** `following` is relative to [viewerEmail]; anonymous viewers always get false. */
+    fun getProfileByUsername(viewerEmail: String?, username: String): Profile {
+        val user = userRepository.findByUsername(username) ?: throw NotFoundException("Profile not found.")
+        val following = viewerEmail?.let { userRepository.findIsFollowUser(it, user.id!!) } ?: false
+        return Profile(user.username, user.bio, user.image, following)
     }
 
     /**

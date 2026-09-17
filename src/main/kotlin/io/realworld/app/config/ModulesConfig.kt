@@ -33,7 +33,7 @@ object ModulesConfig {
     }
     private val profileModule = Kodein.Module("PROFILE") {
         bind() from singleton { ProfileStatsService(instance(), instance(), instance()) }
-        bind() from singleton { ProfileController(instance()) }
+        bind() from singleton { ProfileController(instance(), instance()) }
     }
     private val commentModule = Kodein.Module("COMMENT") {
         bind() from singleton { CommentRepository() }

@@ -45,33 +45,30 @@ fun Routing.articles(articleController: ArticleController, commentController: Co
     route("articles") {
         // Public reads first. Ktor resolves equal-quality sibling routes in registration order, and
         // the authenticate block below contains {slug}, which would otherwise match "search" and
-        // demand a token. Keep this block above it.
+        // demand a token. Keep this block above it, and keep the constant paths ("search", "feed",
+        // "feed/popular") above "{slug}". "feed" needs a token, which its controller enforces.
         authenticate(optional = true) {
+            get { articleController.findBy(this.context) }
             get("search") { articleController.search(this.context) }
+            get("feed") { articleController.feed(this.context) }
             get("feed/popular") { articleController.popular(this.context) }
+            get("{slug}") { articleController.get(this.context) }
+            get("{slug}/comments") { commentController.findBySlug(this.context) }
         }
         authenticate {
-            get("feed") { articleController.feed(this.context) }
+            post { articleController.create(this.context) }
             route("{slug}") {
+                put { articleController.update(this.context) }
+                delete { articleController.delete(this.context) }
                 route("comments") {
                     post { commentController.add(this.context) }
-                    authenticate(optional = true) {
-                        get { commentController.findBySlug(this.context) }
-                    }
                     delete("{id}") { commentController.delete(this.context) }
                 }
                 route("favorite") {
                     post { articleController.favorite(this.context) }
                     delete { articleController.unfavorite(this.context) }
                 }
-                get { articleController.get(this.context) }
-                put { articleController.update(this.context) }
-                delete { articleController.delete(this.context) }
             }
-            authenticate(optional = true) {
-                get { articleController.findBy(this.context) }
-            }
-            post { articleController.create(this.context) }
         }
     }
 }

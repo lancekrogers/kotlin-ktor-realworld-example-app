@@ -10,7 +10,6 @@ import io.realworld.app.web.util.HttpUtil
 import org.apache.http.HttpStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.util.UUID
@@ -47,7 +46,6 @@ class CommentControllerTest {
     }
 
     @Test
-    @Ignore("GET /articles/{slug}/comments is still stubbed; out of scope per D001")
     fun `get all comments for article by slug`() {
         val responseArticle = appRule.http.createArticle()
 
@@ -67,7 +65,6 @@ class CommentControllerTest {
     }
 
     @Test
-    @Ignore("DELETE /articles/{slug}/comments/{id} is still stubbed; out of scope per D001")
     fun `delete comment for article by slug`() {
         val responseArticle = appRule.http.createArticle()
 

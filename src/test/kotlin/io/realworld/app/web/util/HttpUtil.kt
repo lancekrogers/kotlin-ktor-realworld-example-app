@@ -57,6 +57,9 @@ class HttpUtil(port: Int) {
     inline fun <reified T> put(path: String, body: Any) =
         Unirest.put(origin + path).headers(headers).body(body).asObject(T::class.java)
 
+    fun putRaw(path: String, body: Any): HttpResponse<String> =
+        Unirest.put(origin + path).headers(headers).body(body).asString()
+
     inline fun <reified T> deleteWithResponseBody(path: String) =
         Unirest.delete(origin + path).headers(headers).asObject(T::class.java)
 
@@ -69,10 +72,14 @@ class HttpUtil(port: Int) {
         headers["Authorization"] = "Token ${response.body.user?.token}"
     }
 
+    // The in-memory database persists across tests in one JVM, so a fixture with a fixed name is
+    // already registered by the time the second test asks for it. A 422 here is that case, not a
+    // failure; the caller logs in next and the login is what must succeed.
     fun registerUser(email: String, password: String, username: String): UserDTO {
         val userDTO = UserDTO(User(email = email, password = password, username = username))
-        val response = post<UserDTO>("/users", userDTO)
-        return response.body
+        val response = postRaw("/users", userDTO)
+        if (response.status != 200) return UserDTO(null)
+        return jacksonObjectMapper().readValue(response.body, UserDTO::class.java)
     }
 
     fun createUser(userEmail: String = "user@valid_user_mail.com", username: String = "user_name_test"): UserDTO {
