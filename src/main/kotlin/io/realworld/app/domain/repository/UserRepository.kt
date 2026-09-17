@@ -127,7 +127,7 @@ class UserRepository {
             ?: throw NotFoundException("Username not found to unfollow")
         transaction {
             Follows.deleteWhere {
-                Follows.user eq user.id!! and (Follows.follower eq userToUnfollow.id!!)
+                (Follows.user eq userToUnfollow.id!!) and (Follows.follower eq user.id!!)
             }
         }
         return userToUnfollow
