@@ -43,6 +43,9 @@ planning output before implementation started.
    and docs. Each sequence ended with `just gate` on JDK 17 and 21, a test
    census read from the JUnit XML, a read-only review agent, and a PR.
 4. **Human merges.** Every merge was performed by me.
+5. **After the festival.** The stubs left over from the brief's "choose one" came out:
+   the remaining RealWorld endpoints were implemented, the author's disabled tests were
+   enabled, and the bundled Postman collection passes in full.
 
 The full account, including what the agents got wrong and what I would do
 differently, is in [AGENT_WORKLOG.md](AGENT_WORKLOG.md). The camp holds the
@@ -53,10 +56,10 @@ the judge verdicts, so every claim in the work log can be traced to a file.
 
 | | Before | After |
 |---|---|---|
-| Running tests | 4 | 94 |
+| Running tests | 4 | 118, none skipped |
 | CI runs on the fork | 0 | every push and PR, JDK 17 and 21, plus the RealWorld spec job |
 | Public read endpoints | 0 | 3 |
-| Merged PRs | 0 | 11 |
+| Merged PRs | 0 | 16 |
 
 # How it works
 
