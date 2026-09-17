@@ -126,9 +126,11 @@ verify:
 
 # Run the RealWorld Postman collection against the running app container, then
 # check its failures against spec-api/expected-failures.txt the way CI does.
-# Newman itself exits non-zero whenever any request fails, and 18 requests fail
-# by design because their endpoints are stubbed, so its exit code is ignored and
-# the comparator decides: it passes only when the failures match the manifest.
+# Newman exits non-zero whenever any request fails, so its exit code is not the
+# verdict: the comparator is, and it passes only when the failures match the
+# manifest. The report is deleted first and must exist afterwards, so the
+# comparator can never score a stale, gitignored newman-report.json left in
+# spec-api/ by an earlier run when this run's newman never wrote one.
 [no-cd]
 spec:
     #!/usr/bin/env bash
@@ -136,10 +138,16 @@ spec:
     if ! docker inspect {{container_name}} >/dev/null 2>&1; then
         echo "start the app first: just docker up" >&2; exit 1
     fi
+    report={{root}}/spec-api/newman-report.json
+    rm -f "$report"
     docker run --rm --network container:{{container_name}} \
         -v {{root}}/spec-api:/spec -w /spec \
         -e APIURL=http://localhost:8080 -e REPORT=/spec/newman-report.json \
         node:22-bookworm-slim@sha256:83f487e0a63425e5b4d146fb5e5be574bcbe1b7b843d3ebafdd95eaf7767a7e5 ./run-api-tests.sh || true
+    if [ ! -s "$report" ]; then
+        echo "spec: newman wrote no report, so the collection did not run; nothing to compare" >&2
+        exit 1
+    fi
     echo "=== spec: compare against expected-failures.txt ==="
     docker run --rm -v {{root}}/spec-api:/spec -w /spec \
         python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea \
